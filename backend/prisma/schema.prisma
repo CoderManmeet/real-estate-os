@@ -27,6 +27,12 @@ enum PropertyStatus {
   SOLD
 }
 
+enum ProjectStatus {
+  UPCOMING
+  ONGOING
+  COMPLETED
+}
+
 model User {
   id            String         @id @default(uuid())
   fullName      String
@@ -72,4 +78,37 @@ model Property {
   updatedAt    DateTime       @updatedAt
 
   @@map("properties")
+}
+
+model Builder {
+  id                String    @id @default(uuid())
+  name              String
+  contactPerson     String?
+  phone             String?
+  email             String?
+  commissionPercent Float
+  address           String?
+  notes             String?
+  projects          Project[]
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@map("builders")
+}
+
+model Project {
+  id             String        @id @default(uuid())
+  builderId      String
+  builder        Builder       @relation(fields: [builderId], references: [id], onDelete: Cascade)
+  name           String
+  description    String?
+  city           String
+  state          String
+  status         ProjectStatus @default(UPCOMING)
+  launchDate     DateTime?
+  possessionDate DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@map("projects")
 }

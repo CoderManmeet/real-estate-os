@@ -9,12 +9,14 @@ import {
   Handshake,
   CalendarCheck,
   Settings,
+  Building,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { label: 'Properties', href: '/dashboard/properties', icon: Building2 },
+  { label: 'Builders', href: '/dashboard/builders', icon: Building },
   { label: 'Clients', href: '/dashboard/clients', icon: Users },
   { label: 'Leads', href: '/dashboard/leads', icon: Handshake },
   { label: 'Site Visits', href: '/dashboard/site-visits', icon: CalendarCheck },
