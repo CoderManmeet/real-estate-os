@@ -67,10 +67,10 @@ export interface ClientFormValues {
 
 export interface ClientFilters {
   page?: number;
+  limit?: number;
   status?: ClientStatus;
   search?: string;
 }
-
 export interface RequirementFormValues {
   propertyType: PropertyType;
   preferredCity: string;

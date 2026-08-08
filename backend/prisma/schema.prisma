@@ -52,6 +52,23 @@ enum TimelineEventType {
   OTHER
 }
 
+enum LeadStage {
+  NEW
+  CONTACTED
+  QUALIFIED
+  NEGOTIATION
+  WON
+  LOST
+}
+
+enum ActivityType {
+  CALL
+  EMAIL
+  MEETING
+  NOTE
+  OTHER
+}
+
 model User {
   id                String            @id @default(uuid())
   fullName          String
@@ -67,6 +84,11 @@ model User {
   clientNotes       ClientNote[]
   clientTimelines   ClientTimeline[]
   sharedProperties  SharedProperty[]
+  createdLeads      Lead[]            @relation("LeadCreator")
+  assignedLeads      Lead[]            @relation("LeadAssignee")
+  leadActivities    LeadActivity[]
+  createdTasks      Task[]            @relation("TaskCreator")
+  assignedTasks      Task[]            @relation("TaskAssignee")
 
   @@map("users")
 }
@@ -101,6 +123,7 @@ model Property {
   updatedAt    DateTime          @updatedAt
   favorites    Favorite[]
   sharedWith   SharedProperty[]
+  leads        Lead[]
 
   @@map("properties")
 }
@@ -139,21 +162,22 @@ model Project {
 }
 
 model Client {
-  id                String             @id @default(uuid())
+  id                String              @id @default(uuid())
   fullName          String
   phone             String
   email             String?
   source            String?
-  status            ClientStatus       @default(NEW)
+  status            ClientStatus        @default(NEW)
   createdById       String
-  createdBy         User               @relation(fields: [createdById], references: [id])
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
+  createdBy         User                @relation(fields: [createdById], references: [id])
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
   requirements      ClientRequirement[]
   notes             ClientNote[]
   timeline          ClientTimeline[]
   favorites         Favorite[]
   sharedProperties  SharedProperty[]
+  leads             Lead[]
 
   @@map("clients")
 }
@@ -221,4 +245,64 @@ model SharedProperty {
   sharedAt    DateTime @default(now())
 
   @@map("shared_properties")
+}
+
+model LeadSource {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  leads     Lead[]
+  createdAt DateTime @default(now())
+
+  @@map("lead_sources")
+}
+
+model Lead {
+  id            String         @id @default(uuid())
+  clientId      String
+  client        Client         @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  propertyId    String?
+  property      Property?      @relation(fields: [propertyId], references: [id])
+  leadSourceId  String?
+  leadSource    LeadSource?    @relation(fields: [leadSourceId], references: [id])
+  assignedToId  String
+  assignedTo    User           @relation("LeadAssignee", fields: [assignedToId], references: [id])
+  stage         LeadStage      @default(NEW)
+  createdById   String
+  createdBy     User           @relation("LeadCreator", fields: [createdById], references: [id])
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  activities    LeadActivity[]
+  tasks         Task[]
+
+  @@map("leads")
+}
+
+model LeadActivity {
+  id           String       @id @default(uuid())
+  leadId       String
+  lead         Lead         @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  activityType ActivityType
+  description  String
+  createdById  String
+  createdBy    User         @relation(fields: [createdById], references: [id])
+  createdAt    DateTime     @default(now())
+
+  @@map("lead_activities")
+}
+
+model Task {
+  id           String    @id @default(uuid())
+  leadId       String?
+  lead         Lead?     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  title        String
+  dueDate      DateTime?
+  isCompleted  Boolean   @default(false)
+  assignedToId String
+  assignedTo   User      @relation("TaskAssignee", fields: [assignedToId], references: [id])
+  createdById  String
+  createdBy    User      @relation("TaskCreator", fields: [createdById], references: [id])
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@map("tasks")
 }
