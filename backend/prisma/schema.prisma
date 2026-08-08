@@ -33,17 +33,40 @@ enum ProjectStatus {
   COMPLETED
 }
 
+enum ClientStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  NEGOTIATION
+  CONVERTED
+  LOST
+}
+
+enum TimelineEventType {
+  CALL
+  EMAIL
+  MEETING
+  SITE_VISIT
+  STATUS_CHANGE
+  NOTE
+  OTHER
+}
+
 model User {
-  id            String         @id @default(uuid())
-  fullName      String
-  email         String         @unique
-  password      String
-  role          Role           @default(AGENT)
-  isActive      Boolean        @default(true)
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  refreshTokens RefreshToken[]
-  properties    Property[]
+  id                String            @id @default(uuid())
+  fullName          String
+  email             String            @unique
+  password          String
+  role              Role              @default(AGENT)
+  isActive          Boolean           @default(true)
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  refreshTokens     RefreshToken[]
+  properties        Property[]
+  clients           Client[]
+  clientNotes       ClientNote[]
+  clientTimelines   ClientTimeline[]
+  sharedProperties  SharedProperty[]
 
   @@map("users")
 }
@@ -60,11 +83,11 @@ model RefreshToken {
 }
 
 model Property {
-  id           String         @id @default(uuid())
+  id           String            @id @default(uuid())
   title        String
   description  String?
   propertyType PropertyType
-  status       PropertyStatus @default(AVAILABLE)
+  status       PropertyStatus    @default(AVAILABLE)
   price        Float
   areaSqft     Float?
   bedrooms     Int?
@@ -73,9 +96,11 @@ model Property {
   city         String
   state        String
   createdById  String
-  createdBy    User           @relation(fields: [createdById], references: [id])
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
+  createdBy    User              @relation(fields: [createdById], references: [id])
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  favorites    Favorite[]
+  sharedWith   SharedProperty[]
 
   @@map("properties")
 }
@@ -111,4 +136,89 @@ model Project {
   updatedAt      DateTime      @updatedAt
 
   @@map("projects")
+}
+
+model Client {
+  id                String             @id @default(uuid())
+  fullName          String
+  phone             String
+  email             String?
+  source            String?
+  status            ClientStatus       @default(NEW)
+  createdById       String
+  createdBy         User               @relation(fields: [createdById], references: [id])
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  requirements      ClientRequirement[]
+  notes             ClientNote[]
+  timeline          ClientTimeline[]
+  favorites         Favorite[]
+  sharedProperties  SharedProperty[]
+
+  @@map("clients")
+}
+
+model ClientRequirement {
+  id            String       @id @default(uuid())
+  clientId      String
+  client        Client       @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  propertyType  PropertyType
+  preferredCity String
+  minBudget     Float?
+  maxBudget     Float?
+  bedrooms      Int?
+  notes         String?
+  createdAt     DateTime     @default(now())
+
+  @@map("client_requirements")
+}
+
+model ClientNote {
+  id          String   @id @default(uuid())
+  clientId    String
+  client      Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  content     String
+  createdById String
+  createdBy   User     @relation(fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+
+  @@map("client_notes")
+}
+
+model ClientTimeline {
+  id          String            @id @default(uuid())
+  clientId    String
+  client      Client            @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  eventType   TimelineEventType
+  description String
+  createdById String
+  createdBy   User              @relation(fields: [createdById], references: [id])
+  createdAt   DateTime          @default(now())
+
+  @@map("client_timeline")
+}
+
+model Favorite {
+  id         String   @id @default(uuid())
+  clientId   String
+  client     Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@unique([clientId, propertyId])
+  @@map("favorites")
+}
+
+model SharedProperty {
+  id          String   @id @default(uuid())
+  clientId    String
+  client      Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  propertyId  String
+  property    Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  sharedById  String
+  sharedBy    User     @relation(fields: [sharedById], references: [id])
+  sharedAt    DateTime @default(now())
+
+  @@map("shared_properties")
 }
