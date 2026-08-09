@@ -16,6 +16,9 @@ const invoiceFormSchema = z.object({
   notes: z.string().optional(),
 });
 
+type InvoiceFormInput = z.input<typeof invoiceFormSchema>;
+type InvoiceFormOutput = z.output<typeof invoiceFormSchema>;
+
 const inputClass =
   'w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 outline-none focus:border-neutral-400 dark:border-neutral-800 dark:bg-neutral-950 dark:text-white';
 const labelClass = 'mb-1 block text-sm font-medium text-neutral-700 dark:text-neutral-300';
@@ -35,13 +38,14 @@ export function InvoiceForm({
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<z.infer<typeof invoiceFormSchema>>({
+  } = useForm<InvoiceFormInput>({
     resolver: zodResolver(invoiceFormSchema),
   });
 
-  async function handleFormSubmit(values: z.infer<typeof invoiceFormSchema>) {
+  async function handleFormSubmit(rawValues: InvoiceFormInput) {
     setIsSubmitting(true);
     try {
+      const values = invoiceFormSchema.parse(rawValues) as InvoiceFormOutput;
       await onSubmit({
         clientId: values.clientId,
         propertyId: values.propertyId || undefined,

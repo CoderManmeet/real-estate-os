@@ -10,6 +10,7 @@ import siteVisitRoutes from './siteVisit.routes';
 import notificationRoutes from './notification.routes';
 import documentRoutes from './document.routes';
 import invoiceRoutes from './invoice.routes';
+import analyticsRoutes from './analytics.routes';
 
 const router = Router();
 
@@ -24,5 +25,6 @@ router.use('/site-visits', siteVisitRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/documents', documentRoutes);
 router.use('/invoices', invoiceRoutes);
+router.use('/analytics', analyticsRoutes);
 
 export default router;

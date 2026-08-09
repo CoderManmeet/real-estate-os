@@ -11,11 +11,13 @@ import {
   Settings,
   Building,
   Receipt,
+  BarChart3,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { label: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
   { label: 'Properties', href: '/dashboard/properties', icon: Building2 },
   { label: 'Builders', href: '/dashboard/builders', icon: Building },
   { label: 'Clients', href: '/dashboard/clients', icon: Users },
