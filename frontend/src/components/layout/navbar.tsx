@@ -1,4 +1,5 @@
 import { ThemeToggle } from './theme-toggle';
+import { NotificationBell } from './notification-bell';
 
 export function Navbar() {
   return (
@@ -7,6 +8,7 @@ export function Navbar() {
         Welcome back
       </div>
       <div className="flex items-center gap-3">
+        <NotificationBell />
         <ThemeToggle />
         <div className="h-8 w-8 rounded-full bg-neutral-200 dark:bg-neutral-800" />
       </div>

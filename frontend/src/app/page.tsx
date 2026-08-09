@@ -4,7 +4,7 @@ export default function Home() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center gap-4 bg-neutral-50 dark:bg-neutral-950">
       <h1 className="text-3xl font-semibold text-neutral-900 dark:text-white">
-        Real Estate OS
+        Mantrix Real Esate OS
       </h1>
       <Link
         href="/dashboard"

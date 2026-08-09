@@ -10,6 +10,7 @@ import {
   CalendarCheck,
   Settings,
   Building,
+  Receipt,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -20,6 +21,7 @@ const navItems = [
   { label: 'Clients', href: '/dashboard/clients', icon: Users },
   { label: 'Leads', href: '/dashboard/leads', icon: Handshake },
   { label: 'Site Visits', href: '/dashboard/site-visits', icon: CalendarCheck },
+  { label: 'Invoices', href: '/dashboard/invoices', icon: Receipt },
   { label: 'Settings', href: '/dashboard/settings', icon: Settings },
 ];
 

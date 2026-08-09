@@ -69,6 +69,31 @@ enum ActivityType {
   OTHER
 }
 
+enum SiteVisitStatus {
+  SCHEDULED
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+  RESCHEDULED
+}
+
+
+enum DocumentType {
+  BROCHURE
+  PAYMENT_PLAN
+  RERA
+  REGISTRY
+  INVOICE
+  OTHER
+}
+
+enum InvoiceStatus {
+  PENDING
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
 model User {
   id                String            @id @default(uuid())
   fullName          String
@@ -85,10 +110,15 @@ model User {
   clientTimelines   ClientTimeline[]
   sharedProperties  SharedProperty[]
   createdLeads      Lead[]            @relation("LeadCreator")
-  assignedLeads      Lead[]            @relation("LeadAssignee")
+  assignedLeads     Lead[]            @relation("LeadAssignee")
   leadActivities    LeadActivity[]
   createdTasks      Task[]            @relation("TaskCreator")
-  assignedTasks      Task[]            @relation("TaskAssignee")
+  assignedTasks     Task[]            @relation("TaskAssignee")
+  assignedSiteVisits SiteVisit[]      @relation("SiteVisitAssignee")
+  createdSiteVisits  SiteVisit[]      @relation("SiteVisitCreator")
+  notifications      Notification[]
+  uploadedDocuments Document[]
+  createdInvoices   Invoice[]
 
   @@map("users")
 }
@@ -124,6 +154,9 @@ model Property {
   favorites    Favorite[]
   sharedWith   SharedProperty[]
   leads        Lead[]
+  siteVisits   SiteVisit[]
+  documents    Document[]
+  invoices     Invoice[]
 
   @@map("properties")
 }
@@ -178,6 +211,8 @@ model Client {
   favorites         Favorite[]
   sharedProperties  SharedProperty[]
   leads             Lead[]
+  siteVisits        SiteVisit[]
+  invoices          Invoice[]
 
   @@map("clients")
 }
@@ -305,4 +340,73 @@ model Task {
   updatedAt    DateTime  @updatedAt
 
   @@map("tasks")
+}
+
+model SiteVisit {
+  id               String          @id @default(uuid())
+  clientId         String
+  client           Client          @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  propertyId       String
+  property         Property        @relation(fields: [propertyId], references: [id])
+  assignedToId     String
+  assignedTo       User            @relation("SiteVisitAssignee", fields: [assignedToId], references: [id])
+  scheduledAt      DateTime
+  status           SiteVisitStatus @default(SCHEDULED)
+  clientConfirmed  Boolean         @default(false)
+  builderConfirmed Boolean         @default(false)
+  notes            String?
+  createdById      String
+  createdBy        User            @relation("SiteVisitCreator", fields: [createdById], references: [id])
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  @@map("site_visits")
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@map("notifications")
+}
+
+model Document {
+  id           String       @id @default(uuid())
+  title        String
+  docType      DocumentType
+  fileUrl      String
+  publicId     String
+  fileType     String
+  fileSize     Int
+  propertyId   String
+  property     Property     @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  uploadedById String
+  uploadedBy   User         @relation(fields: [uploadedById], references: [id])
+  createdAt    DateTime     @default(now())
+
+  @@map("documents")
+}
+
+model Invoice {
+  id            String        @id @default(uuid())
+  invoiceNumber String        @unique
+  clientId      String
+  client        Client        @relation(fields: [clientId], references: [id])
+  propertyId    String?
+  property      Property?     @relation(fields: [propertyId], references: [id])
+  amount        Float
+  status        InvoiceStatus @default(PENDING)
+  dueDate       DateTime
+  notes         String?
+  createdById   String
+  createdBy     User          @relation(fields: [createdById], references: [id])
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@map("invoices")
 }

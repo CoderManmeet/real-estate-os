@@ -31,6 +31,7 @@ export interface PropertyListResponse {
 
 export interface PropertyFilters {
   page?: number;
+  limit?: number;
   city?: string;
   status?: PropertyStatus;
   minPrice?: number;
