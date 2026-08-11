@@ -11,10 +11,12 @@ export async function createProperty(input: CreatePropertyInput, userId: string)
   return prisma.property.create({
     data: {
       ...input,
+      possessionDate: input.possessionDate ? new Date(input.possessionDate) : undefined,
       createdById: userId,
     },
   });
 }
+
 
 export async function listProperties(query: ListPropertiesQuery) {
   const { page, limit, city, status, minPrice, maxPrice, search } = query;
@@ -63,7 +65,13 @@ export async function getPropertyById(id: string) {
 
 export async function updateProperty(id: string, input: UpdatePropertyInput) {
   await getPropertyById(id);
-  return prisma.property.update({ where: { id }, data: input });
+  return prisma.property.update({
+    where: { id },
+    data: {
+      ...input,
+      possessionDate: input.possessionDate ? new Date(input.possessionDate) : undefined,
+    },
+  });
 }
 
 export async function deleteProperty(id: string) {
@@ -115,5 +123,27 @@ export async function getNearbyPlaces(id: string, placeType: string, radius?: nu
   return prisma.propertyNearbyPlace.findMany({
     where: { propertyId: id, placeType },
     orderBy: { distanceKm: 'asc' },
+  });
+}
+
+export async function compareProperties(ids: string[]) {
+  const properties = await prisma.property.findMany({
+    where: { id: { in: ids } },
+  });
+
+  if (properties.length === 0) {
+    throw new AppError('None of the requested properties were found', 404);
+  }
+
+  return properties.map((p) => {
+    const annualRental = p.estimatedRentalMonthly ? p.estimatedRentalMonthly * 12 : null;
+    const rentalYieldPercent = annualRental && p.price
+      ? Number(((annualRental / p.price) * 100).toFixed(2))
+      : null;
+
+    return {
+      ...p,
+      rentalYieldPercent,
+    };
   });
 }

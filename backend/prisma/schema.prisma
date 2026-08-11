@@ -149,6 +149,11 @@ model Property {
   state        String
   latitude     Float?
   longitude    Float?
+  amenities              String[]  @default([])
+  estimatedRentalMonthly Float?
+  maintenanceMonthly     Float?
+  annualAppreciationPercent Float?
+  possessionDate         DateTime?
   createdById  String
   createdBy    User              @relation(fields: [createdById], references: [id])
   createdAt    DateTime          @default(now())

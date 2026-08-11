@@ -19,6 +19,11 @@ import { nearbyPlacesQuerySchema } from '../validators/property.validator';
 import { geocodeProperty, getNearbyPlaces } from '../services/property.service';
 
 
+import { compareQuerySchema } from '../validators/property.validator';
+import { compareProperties } from '../services/property.service';
+
+
+
 export async function create(req: AuthRequest, res: Response, next: NextFunction) {
   try {
     if (!req.user) throw new AppError('Not authenticated', 401);
@@ -82,6 +87,17 @@ export async function nearbyPlaces(req: AuthRequest, res: Response, next: NextFu
     const query = nearbyPlacesQuerySchema.parse(req.query);
     const places = await getNearbyPlaces(getParam(req, 'id'), query.type, query.radius);
     res.status(200).json({ success: true, data: places });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function compare(req: AuthRequest, res: Response, next: NextFunction) {
+  try {
+    const query = compareQuerySchema.parse(req.query);
+    const ids = query.ids.split(',').map((id) => id.trim());
+    const properties = await compareProperties(ids);
+    res.status(200).json({ success: true, data: properties });
   } catch (err) {
     next(err);
   }
