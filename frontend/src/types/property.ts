@@ -16,6 +16,12 @@ export interface Property {
   state: string;
   latitude?: number | null;
   longitude?: number | null;
+  amenities?: string[];
+  estimatedRentalMonthly?: number | null;
+  maintenanceMonthly?: number | null;
+  annualAppreciationPercent?: number | null;
+  possessionDate?: string | null;
+  rentalYieldPercent?: number | null;
   createdById: string;
   createdAt: string;
   updatedAt: string;

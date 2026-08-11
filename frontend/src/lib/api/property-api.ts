@@ -27,3 +27,8 @@ export async function updatePropertyRequest(
 export async function deletePropertyRequest(id: string): Promise<void> {
   await api.delete(`/properties/${id}`);
 }
+
+export async function comparePropertiesRequest(ids: string[]): Promise<Property[]> {
+  const { data } = await api.get('/properties/compare', { params: { ids: ids.join(',') } });
+  return data.data;
+}
