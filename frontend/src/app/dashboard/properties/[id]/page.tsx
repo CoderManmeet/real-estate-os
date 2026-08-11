@@ -3,14 +3,24 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Bed, Bath, Ruler, MapPin, Pencil } from 'lucide-react';
+import dynamic from 'next/dynamic';
+import { Bed, Bath, Ruler, MapPin, Pencil, LocateFixed, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Property } from '@/types/property';
 import { PropertyDocument } from '@/types/document';
 import { getPropertyRequest } from '@/lib/api/property-api';
 import { listDocumentsRequest, deleteDocumentRequest } from '@/lib/api/document-api';
+import { geocodePropertyRequest } from '@/lib/api/maps-api';
 import { DocumentUpload } from '@/components/documents/document-upload';
 import { DocumentList } from '@/components/documents/document-list';
+import { NearbyPlacesPanel } from '@/components/maps/nearby-places-panel';
+
+// Leaflet touches `window` on import, which doesn't exist during server-side rendering —
+// loading the map client-side only avoids an SSR crash.
+const PropertyMap = dynamic(
+  () => import('@/components/maps/property-map').then((mod) => mod.PropertyMap),
+  { ssr: false, loading: () => <div className="h-72 w-full animate-pulse rounded-xl bg-neutral-100 dark:bg-neutral-800" /> }
+);
 
 function formatPrice(price: number) {
   if (price >= 10000000) return `₹${(price / 10000000).toFixed(2)} Cr`;
@@ -24,6 +34,7 @@ export default function PropertyDetailPage() {
   const [property, setProperty] = useState<Property | null>(null);
   const [documents, setDocuments] = useState<PropertyDocument[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isGeocoding, setIsGeocoding] = useState(false);
 
   const fetchData = useCallback(async () => {
     try {
@@ -56,11 +67,26 @@ export default function PropertyDetailPage() {
     }
   }
 
+  async function handleGeocode() {
+    setIsGeocoding(true);
+    try {
+      const updated = await geocodePropertyRequest(params.id);
+      setProperty(updated);
+      toast.success('Location found');
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Failed to locate this address');
+    } finally {
+      setIsGeocoding(false);
+    }
+  }
+
   if (isLoading) {
     return <p className="text-sm text-neutral-500 dark:text-neutral-400">Loading...</p>;
   }
 
   if (!property) return null;
+
+  const hasLocation = property.latitude != null && property.longitude != null;
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -96,6 +122,42 @@ export default function PropertyDetailPage() {
         </div>
         {property.description && (
           <p className="mt-4 text-sm text-neutral-600 dark:text-neutral-300">{property.description}</p>
+        )}
+      </div>
+
+      <div className="rounded-xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-neutral-900 dark:text-white">Location</h2>
+          {!hasLocation && (
+            <button
+              onClick={handleGeocode}
+              disabled={isGeocoding}
+              className="flex items-center gap-2 rounded-lg bg-neutral-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-neutral-700 disabled:opacity-50 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
+            >
+              {isGeocoding ? <Loader2 size={13} className="animate-spin" /> : <LocateFixed size={13} />}
+              {isGeocoding ? 'Locating...' : 'Find on Map'}
+            </button>
+          )}
+        </div>
+
+        {hasLocation ? (
+          <>
+            <PropertyMap
+              latitude={property.latitude as number}
+              longitude={property.longitude as number}
+              title={property.title}
+            />
+            <div className="mt-4 border-t border-neutral-100 pt-4 dark:border-neutral-800">
+              <h3 className="mb-3 text-xs font-semibold text-neutral-500 dark:text-neutral-400">
+                Nearby
+              </h3>
+              <NearbyPlacesPanel propertyId={property.id} />
+            </div>
+          </>
+        ) : (
+          <p className="text-sm text-neutral-500 dark:text-neutral-400">
+            This property hasn't been located on the map yet. Click "Find on Map" to geocode its address.
+          </p>
         )}
       </div>
 

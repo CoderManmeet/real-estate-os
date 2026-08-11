@@ -14,6 +14,8 @@ export interface Property {
   address: string;
   city: string;
   state: string;
+  latitude?: number | null;
+  longitude?: number | null;
   createdById: string;
   createdAt: string;
   updatedAt: string;

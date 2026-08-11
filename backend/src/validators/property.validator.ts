@@ -26,6 +26,13 @@ export const listPropertiesQuerySchema = z.object({
   search: z.string().optional(),
 });
 
+export const nearbyPlacesQuerySchema = z.object({
+  type: z.enum(['school', 'hospital', 'airport', 'metro', 'market']),
+  radius: z.coerce.number().positive().max(20000).optional(),
+});
+
+export type NearbyPlacesQuery = z.infer<typeof nearbyPlacesQuerySchema>;
+
 export type CreatePropertyInput = z.infer<typeof createPropertySchema>;
 export type UpdatePropertyInput = z.infer<typeof updatePropertySchema>;
 export type ListPropertiesQuery = z.infer<typeof listPropertiesQuerySchema>;

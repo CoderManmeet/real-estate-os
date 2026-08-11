@@ -147,6 +147,8 @@ model Property {
   address      String
   city         String
   state        String
+  latitude     Float?
+  longitude    Float?
   createdById  String
   createdBy    User              @relation(fields: [createdById], references: [id])
   createdAt    DateTime          @default(now())
@@ -157,6 +159,7 @@ model Property {
   siteVisits   SiteVisit[]
   documents    Document[]
   invoices     Invoice[]
+  nearbyPlaces PropertyNearbyPlace[]
 
   @@map("properties")
 }
@@ -409,4 +412,16 @@ model Invoice {
   updatedAt     DateTime      @updatedAt
 
   @@map("invoices")
+}
+
+model PropertyNearbyPlace {
+  id         String   @id @default(uuid())
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  placeType  String
+  name       String
+  distanceKm Float
+  createdAt  DateTime @default(now())
+
+  @@map("property_nearby_places")
 }

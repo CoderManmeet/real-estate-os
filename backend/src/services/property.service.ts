@@ -5,6 +5,7 @@ import {
   UpdatePropertyInput,
   ListPropertiesQuery,
 } from '../validators/property.validator';
+import { geocodeAddress, findNearbyPlaces } from './maps.service';
 
 export async function createProperty(input: CreatePropertyInput, userId: string) {
   return prisma.property.create({
@@ -68,4 +69,51 @@ export async function updateProperty(id: string, input: UpdatePropertyInput) {
 export async function deleteProperty(id: string) {
   await getPropertyById(id);
   await prisma.property.delete({ where: { id } });
+}
+
+export async function geocodeProperty(id: string) {
+  const property = await getPropertyById(id);
+
+  const addressParts = [property.address, property.city, property.state, 'India'];
+  const fullAddress = [...new Set(addressParts)].join(', ');
+
+  const fallbackParts = [property.city, property.state, 'India'];
+  const fallbackAddress = [...new Set(fallbackParts)].join(', ');
+
+  const finalFallback = `${property.state}, India`;
+
+  const location = await geocodeAddress(fullAddress, fallbackAddress, finalFallback);
+
+  return prisma.property.update({
+    where: { id },
+    data: { latitude: location.latitude, longitude: location.longitude },
+  });
+}
+
+export async function getNearbyPlaces(id: string, placeType: string, radius?: number) {
+  const property = await getPropertyById(id);
+
+  if (property.latitude == null || property.longitude == null) {
+    throw new AppError(
+      'This property has not been geocoded yet. Call the geocode endpoint first.',
+      400
+    );
+  }
+
+  const results = await findNearbyPlaces(property.latitude, property.longitude, placeType, radius);
+
+  await prisma.propertyNearbyPlace.deleteMany({ where: { propertyId: id, placeType } });
+  await prisma.propertyNearbyPlace.createMany({
+    data: results.map((r) => ({
+      propertyId: id,
+      placeType,
+      name: r.name,
+      distanceKm: r.distanceKm,
+    })),
+  });
+
+  return prisma.propertyNearbyPlace.findMany({
+    where: { propertyId: id, placeType },
+    orderBy: { distanceKm: 'asc' },
+  });
 }

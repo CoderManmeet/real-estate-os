@@ -1,7 +1,9 @@
 import { Router } from 'express';
-import { create, list, getOne, update, remove } from '../controllers/property.controller';
+// import { create, list, getOne, update, remove } from '../controllers/property.controller';
 import { authMiddleware } from '../middlewares/auth.middleware';
 import { requireRole } from '../middlewares/role.middleware';
+import { create, list, getOne, update, remove, geocode, nearbyPlaces } from '../controllers/property.controller';
+
 
 const router = Router();
 
@@ -12,5 +14,7 @@ router.get('/:id', getOne);
 router.post('/', requireRole('ADMIN', 'MANAGER', 'AGENT'), create);
 router.patch('/:id', requireRole('ADMIN', 'MANAGER', 'AGENT'), update);
 router.delete('/:id', requireRole('ADMIN', 'MANAGER'), remove);
+router.post('/:id/geocode', geocode);
+router.get('/:id/nearby-places', nearbyPlaces);
 
 export default router;

@@ -1,3 +1,4 @@
+import { getParam } from '../utils/getParam';
 import { Response, NextFunction } from 'express';
 import { AuthRequest } from '../middlewares/auth.middleware';
 import {
@@ -13,6 +14,10 @@ import {
   deleteProperty,
 } from '../services/property.service';
 import { AppError } from '../utils/AppError';
+
+import { nearbyPlacesQuerySchema } from '../validators/property.validator';
+import { geocodeProperty, getNearbyPlaces } from '../services/property.service';
+
 
 export async function create(req: AuthRequest, res: Response, next: NextFunction) {
   try {
@@ -37,7 +42,7 @@ export async function list(req: AuthRequest, res: Response, next: NextFunction) 
 
 export async function getOne(req: AuthRequest, res: Response, next: NextFunction) {
   try {
-    const property = await getPropertyById(req.params.id);
+    const property = await getPropertyById(getParam(req, 'id'));
     res.status(200).json({ success: true, data: property });
   } catch (err) {
     next(err);
@@ -47,7 +52,7 @@ export async function getOne(req: AuthRequest, res: Response, next: NextFunction
 export async function update(req: AuthRequest, res: Response, next: NextFunction) {
   try {
     const input = updatePropertySchema.parse(req.body);
-    const property = await updateProperty(req.params.id, input);
+    const property = await updateProperty(getParam(req, 'id'), input);
     res.status(200).json({ success: true, data: property });
   } catch (err) {
     next(err);
@@ -56,8 +61,27 @@ export async function update(req: AuthRequest, res: Response, next: NextFunction
 
 export async function remove(req: AuthRequest, res: Response, next: NextFunction) {
   try {
-    await deleteProperty(req.params.id);
+    await deleteProperty(getParam(req, 'id'));
     res.status(200).json({ success: true, message: 'Property deleted' });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function geocode(req: AuthRequest, res: Response, next: NextFunction) {
+  try {
+    const property = await geocodeProperty(getParam(req, 'id'));
+    res.status(200).json({ success: true, data: property });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function nearbyPlaces(req: AuthRequest, res: Response, next: NextFunction) {
+  try {
+    const query = nearbyPlacesQuerySchema.parse(req.query);
+    const places = await getNearbyPlaces(getParam(req, 'id'), query.type, query.radius);
+    res.status(200).json({ success: true, data: places });
   } catch (err) {
     next(err);
   }
