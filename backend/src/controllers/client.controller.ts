@@ -12,6 +12,8 @@ import {
   propertyRefSchema,
 } from '../validators/client.validator';
 import * as clientService from '../services/client.service';
+import { getOrCreatePortalLink } from '../services/client.service';
+
 
 function requireUser(req: AuthRequest) {
   if (!req.user) throw new AppError('Not authenticated', 401);
@@ -125,6 +127,15 @@ export async function shareProperty(req: AuthRequest, res: Response, next: NextF
     const { propertyId } = propertyRefSchema.parse(req.body);
     const shared = await clientService.shareProperty(getParam(req, 'id'), propertyId, user.userId);
     res.status(201).json({ success: true, data: shared });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function getPortalLink(req: AuthRequest, res: Response, next: NextFunction) {
+  try {
+    const token = await getOrCreatePortalLink(getParam(req, 'id'));
+    res.status(200).json({ success: true, data: { token } });
   } catch (err) {
     next(err);
   }

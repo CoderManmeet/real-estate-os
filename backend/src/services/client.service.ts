@@ -8,6 +8,7 @@ import {
   CreateNoteInput,
   CreateTimelineEventInput,
 } from '../validators/client.validator';
+import crypto from 'crypto';
 
 export async function createClient(input: CreateClientInput, userId: string) {
   const client = await prisma.client.create({
@@ -160,4 +161,17 @@ export async function shareProperty(clientId: string, propertyId: string, userId
   });
 
   return shared;
+}
+
+export async function getOrCreatePortalLink(clientId: string) {
+  const client = await prisma.client.findUnique({ where: { id: clientId } });
+  if (!client) throw new AppError('Client not found', 404);
+
+  if (client.portalToken) {
+    return client.portalToken;
+  }
+
+  const token = crypto.randomBytes(24).toString('hex');
+  await prisma.client.update({ where: { id: clientId }, data: { portalToken: token } });
+  return token;
 }

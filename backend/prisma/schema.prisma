@@ -209,6 +209,7 @@ model Client {
   email             String?
   source            String?
   status            ClientStatus        @default(NEW)
+  portalToken String? @unique
   createdById       String
   createdBy         User                @relation(fields: [createdById], references: [id])
   createdAt         DateTime            @default(now())

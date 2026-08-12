@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import * as clientController from '../controllers/client.controller';
 import { authMiddleware } from '../middlewares/auth.middleware';
+// import * as clientController from '../controllers/client.controller';
+
 
 const router = Router();
 
@@ -20,5 +22,6 @@ router.post('/:id/favorites', clientController.addFavorite);
 router.delete('/:id/favorites/:propertyId', clientController.removeFavorite);
 
 router.post('/:id/shared-properties', clientController.shareProperty);
+router.get('/:id/portal-link', clientController.getPortalLink);
 
 export default router;

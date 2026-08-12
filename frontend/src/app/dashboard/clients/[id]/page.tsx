@@ -58,6 +58,19 @@ export default function ClientDetailPage() {
     }
   }
 
+
+  async function handleSharePortalLink() {
+    try {
+      const { api } = await import('@/lib/axios');
+      const { data } = await api.get(`/clients/${params.id}/portal-link`);
+      const portalUrl = `${window.location.origin}/portal/${data.data.token}`;
+      await navigator.clipboard.writeText(portalUrl);
+      toast.success('Portal link copied to clipboard');
+    } catch {
+      toast.error('Failed to generate portal link');
+    }
+  }
+
   async function handleAddRequirement(values: RequirementFormValues) {
     try {
       await addRequirementRequest(params.id, values);
@@ -127,6 +140,12 @@ export default function ClientDetailPage() {
               <option key={s} value={s}>{s}</option>
             ))}
           </select>
+          <button
+            onClick={handleSharePortalLink}
+            className="flex items-center gap-2 rounded-lg border border-neutral-200 px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50 dark:border-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-800"
+          >
+            <Share2 size={14} /> Portal Link
+          </button>
           <button
             onClick={handleDelete}
             className="flex items-center gap-2 rounded-lg border border-neutral-200 px-3 py-2 text-sm font-medium text-red-600 hover:bg-neutral-50 dark:border-neutral-800 dark:hover:bg-neutral-800"

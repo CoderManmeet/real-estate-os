@@ -11,6 +11,7 @@ import notificationRoutes from './notification.routes';
 import documentRoutes from './document.routes';
 import invoiceRoutes from './invoice.routes';
 import analyticsRoutes from './analytics.routes';
+import portalRoutes from './portal.routes';
 
 const router = Router();
 
@@ -26,5 +27,6 @@ router.use('/notifications', notificationRoutes);
 router.use('/documents', documentRoutes);
 router.use('/invoices', invoiceRoutes);
 router.use('/analytics', analyticsRoutes);
+router.use('/portal', portalRoutes);
 
 export default router;
