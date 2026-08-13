@@ -13,6 +13,7 @@ export const env = {
   port: process.env.PORT || 5000,
   databaseUrl: required('DATABASE_URL'),
   corsOrigin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+  aiServiceUrl: process.env.AI_SERVICE_URL || 'http://localhost:8000',
   jwt: {
     accessSecret: required('JWT_ACCESS_SECRET'),
     refreshSecret: required('JWT_REFRESH_SECRET'),

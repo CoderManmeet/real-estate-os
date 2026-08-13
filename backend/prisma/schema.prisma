@@ -94,6 +94,13 @@ enum InvoiceStatus {
   CANCELLED
 }
 
+enum InventoryUpdateSource {
+  AGENT
+  BUILDER
+}
+
+
+
 model User {
   id                String            @id @default(uuid())
   fullName          String
@@ -116,6 +123,7 @@ model User {
   assignedTasks     Task[]            @relation("TaskAssignee")
   assignedSiteVisits SiteVisit[]      @relation("SiteVisitAssignee")
   createdSiteVisits  SiteVisit[]      @relation("SiteVisitCreator")
+  inventoryChanges InventoryStatusLog[]
   notifications      Notification[]
   uploadedDocuments Document[]
   createdInvoices   Invoice[]
@@ -149,6 +157,10 @@ model Property {
   state        String
   latitude     Float?
   longitude    Float?
+  projectId    String?
+  project      Project?              @relation(fields: [projectId], references: [id])
+  statusLogs   InventoryStatusLog[]
+  aiSummary    PropertyAiSummary?
   amenities              String[]  @default([])
   estimatedRentalMonthly Float?
   maintenanceMonthly     Float?
@@ -194,6 +206,7 @@ model Project {
   city           String
   state          String
   status         ProjectStatus @default(UPCOMING)
+  properties Property[]
   launchDate     DateTime?
   possessionDate DateTime?
   createdAt      DateTime      @default(now())
@@ -430,4 +443,36 @@ model PropertyNearbyPlace {
   createdAt  DateTime @default(now())
 
   @@map("property_nearby_places")
+}
+
+model InventoryStatusLog {
+  id             String                 @id @default(uuid())
+  propertyId     String
+  property       Property               @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  previousStatus PropertyStatus
+  newStatus      PropertyStatus
+  source         InventoryUpdateSource  @default(AGENT)
+  note           String?
+  changedById    String
+  changedBy      User                   @relation(fields: [changedById], references: [id])
+  createdAt      DateTime               @default(now())
+
+  @@map("inventory_status_logs")
+}
+
+model PropertyAiSummary {
+  id               String   @id @default(uuid())
+  propertyId       String   @unique
+  property         Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  summary          String
+  pros             String[] @default([])
+  cons             String[] @default([])
+  investmentScore  Int?
+  investmentNote   String?
+  model            String
+  generatedAt      DateTime @default(now())
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@map("property_ai_summaries")
 }

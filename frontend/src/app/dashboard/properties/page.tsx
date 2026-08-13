@@ -9,6 +9,7 @@ import { Property, PropertyFilters } from '@/types/property';
 import { listPropertiesRequest, deletePropertyRequest } from '@/lib/api/property-api';
 import { PropertyCard } from '@/components/properties/property-card';
 import { PropertyFiltersBar } from '@/components/properties/property-filters';
+import { AiSearchBar } from '@/components/ai/ai-search-bar';
 
 export default function PropertiesPage() {
   const router = useRouter();
@@ -91,6 +92,8 @@ export default function PropertiesPage() {
           </Link>
         </div>
       </div>
+
+      <AiSearchBar />
 
       <PropertyFiltersBar filters={filters} onChange={setFilters} />
 

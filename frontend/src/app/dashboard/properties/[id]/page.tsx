@@ -1,5 +1,10 @@
 'use client';
-
+import { StatusUpdateForm } from '@/components/inventory/status-update-form';
+import { StatusHistoryTimeline } from '@/components/inventory/status-history-timeline';
+import { updatePropertyStatusRequest, getStatusHistoryRequest } from '@/lib/api/inventory-api';
+import { InventoryStatusLog } from '@/types/inventory';
+import { InventorySource } from '@/types/inventory';
+import { PropertyStatus } from '@/types/property';
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -14,6 +19,10 @@ import { geocodePropertyRequest } from '@/lib/api/maps-api';
 import { DocumentUpload } from '@/components/documents/document-upload';
 import { DocumentList } from '@/components/documents/document-list';
 import { NearbyPlacesPanel } from '@/components/maps/nearby-places-panel';
+import { AiSummaryPanel } from '@/components/ai/ai-summary-panel';
+
+
+
 
 // Leaflet touches `window` on import, which doesn't exist during server-side rendering —
 // loading the map client-side only avoids an SSR crash.
@@ -33,17 +42,20 @@ export default function PropertyDetailPage() {
   const router = useRouter();
   const [property, setProperty] = useState<Property | null>(null);
   const [documents, setDocuments] = useState<PropertyDocument[]>([]);
+  const [statusLogs, setStatusLogs] = useState<InventoryStatusLog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isGeocoding, setIsGeocoding] = useState(false);
 
   const fetchData = useCallback(async () => {
     try {
-      const [propertyData, docsData] = await Promise.all([
+      const [propertyData, docsData, historyData] = await Promise.all([
         getPropertyRequest(params.id),
         listDocumentsRequest(params.id),
+        getStatusHistoryRequest(params.id),
       ]);
       setProperty(propertyData);
       setDocuments(docsData);
+      setStatusLogs(historyData);
     } catch {
       toast.error('Property not found');
       router.push('/dashboard/properties');
@@ -64,6 +76,16 @@ export default function PropertyDetailPage() {
       fetchData();
     } catch {
       toast.error('Failed to delete document');
+    }
+  }
+
+  async function handleStatusUpdate(status: PropertyStatus, source: InventorySource, note: string) {
+    try {
+      await updatePropertyStatusRequest(params.id, status, source, note || undefined);
+      toast.success('Status updated');
+      fetchData();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Failed to update status');
     }
   }
 
@@ -147,6 +169,7 @@ export default function PropertyDetailPage() {
               longitude={property.longitude as number}
               title={property.title}
             />
+
             <div className="mt-4 border-t border-neutral-100 pt-4 dark:border-neutral-800">
               <h3 className="mb-3 text-xs font-semibold text-neutral-500 dark:text-neutral-400">
                 Nearby
@@ -159,6 +182,21 @@ export default function PropertyDetailPage() {
             This property hasn't been located on the map yet. Click "Find on Map" to geocode its address.
           </p>
         )}
+      </div>
+
+      <AiSummaryPanel propertyId={property.id} />
+
+      <div className="rounded-xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
+        <h2 className="mb-3 text-sm font-semibold text-neutral-900 dark:text-white">
+          Inventory Status
+        </h2>
+        <StatusUpdateForm currentStatus={property.status} onSubmit={handleStatusUpdate} />
+        <div className="mt-5 border-t border-neutral-100 pt-4 dark:border-neutral-800">
+          <h3 className="mb-3 text-xs font-semibold text-neutral-500 dark:text-neutral-400">
+            History
+          </h3>
+          <StatusHistoryTimeline logs={statusLogs} />
+        </div>
       </div>
 
       <div className="rounded-xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">

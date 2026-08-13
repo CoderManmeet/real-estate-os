@@ -12,6 +12,8 @@ import documentRoutes from './document.routes';
 import invoiceRoutes from './invoice.routes';
 import analyticsRoutes from './analytics.routes';
 import portalRoutes from './portal.routes';
+import inventoryRoutes from './inventory.routes';
+import aiRoutes from './ai.routes';
 
 const router = Router();
 
@@ -28,5 +30,7 @@ router.use('/documents', documentRoutes);
 router.use('/invoices', invoiceRoutes);
 router.use('/analytics', analyticsRoutes);
 router.use('/portal', portalRoutes);
+router.use('/inventory', inventoryRoutes);
+router.use('/ai', aiRoutes);
 
 export default router;
