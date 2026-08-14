@@ -35,11 +35,10 @@ export function BuilderForm({
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<BuilderFormValues>({
+  } = useForm<z.input<typeof builderFormSchema>, unknown, BuilderFormValues>({
     resolver: zodResolver(builderFormSchema),
     defaultValues,
   });
-
   async function handleFormSubmit(values: BuilderFormValues) {
     setIsSubmitting(true);
     try {

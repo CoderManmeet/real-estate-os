@@ -39,7 +39,7 @@ export function PropertyForm({
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<PropertyFormValues>({
+  } = useForm<z.input<typeof propertyFormSchema>, unknown, PropertyFormValues>({
     resolver: zodResolver(propertyFormSchema),
     defaultValues,
   });

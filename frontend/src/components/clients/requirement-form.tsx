@@ -32,7 +32,7 @@ export function RequirementForm({
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<RequirementFormValues>({
+  } = useForm<z.input<typeof requirementFormSchema>, unknown, RequirementFormValues>({
     resolver: zodResolver(requirementFormSchema),
   });
 
