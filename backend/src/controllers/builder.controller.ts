@@ -1,5 +1,6 @@
 import { Response, NextFunction } from 'express';
 import { AuthRequest } from '../middlewares/auth.middleware';
+import { getParam } from '../utils/getParam';
 import {
   createBuilderSchema,
   updateBuilderSchema,
@@ -35,7 +36,7 @@ export async function list(req: AuthRequest, res: Response, next: NextFunction) 
 
 export async function getOne(req: AuthRequest, res: Response, next: NextFunction) {
   try {
-    const builder = await getBuilderById(req.params.id);
+    const builder = await getBuilderById(getParam(req, 'id'));
     res.status(200).json({ success: true, data: builder });
   } catch (err) {
     next(err);
@@ -45,7 +46,7 @@ export async function getOne(req: AuthRequest, res: Response, next: NextFunction
 export async function update(req: AuthRequest, res: Response, next: NextFunction) {
   try {
     const input = updateBuilderSchema.parse(req.body);
-    const builder = await updateBuilder(req.params.id, input);
+    const builder = await updateBuilder(getParam(req, 'id'), input);
     res.status(200).json({ success: true, data: builder });
   } catch (err) {
     next(err);
@@ -54,7 +55,7 @@ export async function update(req: AuthRequest, res: Response, next: NextFunction
 
 export async function remove(req: AuthRequest, res: Response, next: NextFunction) {
   try {
-    await deleteBuilder(req.params.id);
+    await deleteBuilder(getParam(req, 'id'));
     res.status(200).json({ success: true, message: 'Builder deleted' });
   } catch (err) {
     next(err);

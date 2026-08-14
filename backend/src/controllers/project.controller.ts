@@ -1,5 +1,6 @@
 import { Response, NextFunction } from 'express';
 import { AuthRequest } from '../middlewares/auth.middleware';
+import { getParam } from '../utils/getParam';
 import { createProjectSchema, updateProjectSchema } from '../validators/project.validator';
 import {
   createProject,
@@ -20,7 +21,7 @@ export async function create(req: AuthRequest, res: Response, next: NextFunction
 
 export async function getOne(req: AuthRequest, res: Response, next: NextFunction) {
   try {
-    const project = await getProjectById(req.params.id);
+    const project = await getProjectById(getParam(req, 'id'));
     res.status(200).json({ success: true, data: project });
   } catch (err) {
     next(err);
@@ -30,7 +31,7 @@ export async function getOne(req: AuthRequest, res: Response, next: NextFunction
 export async function update(req: AuthRequest, res: Response, next: NextFunction) {
   try {
     const input = updateProjectSchema.parse(req.body);
-    const project = await updateProject(req.params.id, input);
+    const project = await updateProject(getParam(req, 'id'), input);
     res.status(200).json({ success: true, data: project });
   } catch (err) {
     next(err);
@@ -39,7 +40,7 @@ export async function update(req: AuthRequest, res: Response, next: NextFunction
 
 export async function remove(req: AuthRequest, res: Response, next: NextFunction) {
   try {
-    await deleteProject(req.params.id);
+    await deleteProject(getParam(req, 'id'));
     res.status(200).json({ success: true, message: 'Project deleted' });
   } catch (err) {
     next(err);
