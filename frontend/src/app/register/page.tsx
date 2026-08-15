@@ -80,7 +80,7 @@ export default function RegisterPage() {
                 autoComplete="name"
                 {...register('fullName')}
                 className={inputClass}
-                placeholder="Manmeet Singh"
+                placeholder="Your full name"
               />
               {errors.fullName && (
                 <p className="mt-1.5 text-xs text-red-500">{errors.fullName.message}</p>
@@ -100,7 +100,7 @@ export default function RegisterPage() {
                 autoComplete="email"
                 {...register('email')}
                 className={inputClass}
-                placeholder="you@agency.com"
+                placeholder="your email"
               />
               {errors.email && (
                 <p className="mt-1.5 text-xs text-red-500">{errors.email.message}</p>
