@@ -2,7 +2,7 @@ import axios from 'axios';
 import { AppError } from '../utils/AppError';
 
 const NOMINATIM_URL = 'https://nominatim.openstreetmap.org/search';
-const OVERPASS_URL = 'https://overpass-api.de/api/interpreter';
+const OVERPASS_URL = 'https://overpass.kumi.systems/api/interpreter';
 
 const NOMINATIM_HEADERS = { 'User-Agent': 'RealEstateOS/1.0 (development)' };
 
