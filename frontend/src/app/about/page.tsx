@@ -1,30 +1,29 @@
 ﻿'use client';
 
-import { useEffect, useRef, useState, ReactNode } from 'react';
+import { useEffect, useRef, useState, ReactNode, MouseEvent } from 'react';
 import Link from 'next/link';
-import { Phone, MessageCircle, MapPin, Users, ShieldCheck, Handshake, Home } from 'lucide-react';
+import Image from 'next/image';
+import { Phone, MessageCircle, MapPin, Users, ShieldCheck, Handshake, Home, Sparkles, ArrowDown } from 'lucide-react';
 
-// ── Replace these with your real values ──────────────────────────────
 const CALL_NUMBER = '+917888548215';
-const WHATSAPP_NUMBER = '918264757806'; // no + or spaces, wa.me format
+const WHATSAPP_NUMBER = '918264757806';
 const SALES_NUMBER = '+918264757806';
 const SITE_VISIT_NUMBER = '+919814014708';
 
 const SOCIAL_LINKS = {
-  instagram: '#', // TODO: paste your Instagram URL
-  facebook: '#', // TODO: paste your Facebook URL
-  youtube: '#', // TODO: paste your YouTube URL
-  linkedin: '#', // TODO: paste your LinkedIn URL
-  googleBusiness: '#', // TODO: paste your Google Business URL
+  instagram: '#',
+  facebook: '#',
+  youtube: '#',
+  linkedin: '#',
+  googleBusiness: '#',
 };
 
 const FOUNDERS = [
-  { name: 'Manmeet Singh', role: 'Founder & Real Estate Consultant' },
-  { name: 'Armeet Singh', role: 'Founder & Real Estate Consultant' },
-  { name: 'Viraj Singh', role: 'Founder & Real Estate Consultant' },
-  { name: 'Vansh', role: 'Co-Founder & Property Consultant' }, // TODO: add real name
+  { name: 'Manmeet Singh', role: 'Founder and Real Estate Consultant' },
+  { name: 'Armeet Singh', role: 'Founder and Real Estate Consultant' },
+  { name: 'Viraj Singh', role: 'Founder and Real Estate Consultant' },
+  { name: 'Vansh', role: 'Co-Founder and Property Consultant' },
 ];
-// ───────────────────────────────────────────────────────────────────
 
 function InstagramIcon({ size = 18 }: { size?: number }) {
   return (
@@ -63,7 +62,7 @@ function LinkedinIcon({ size = 18 }: { size?: number }) {
   );
 }
 
-function Reveal({ children, className = '' }: { children: ReactNode; className?: string }) {
+function Reveal({ children, className = '', delayMs = 0 }: { children: ReactNode; className?: string; delayMs?: number }) {
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
 
@@ -73,7 +72,7 @@ function Reveal({ children, className = '' }: { children: ReactNode; className?:
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-          setVisible(true);
+          setTimeout(() => setVisible(true), delayMs);
           observer.disconnect();
         }
       },
@@ -81,14 +80,73 @@ function Reveal({ children, className = '' }: { children: ReactNode; className?:
     );
     observer.observe(node);
     return () => observer.disconnect();
-  }, []);
+  }, [delayMs]);
 
   return (
     <div
       ref={ref}
-      className={`transition-all duration-700 ease-out ${
-        visible ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'
-      } ${className}`}
+      className={"transition-all duration-700 ease-out " + (visible ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0") + " " + className}
+    >
+      {children}
+    </div>
+  );
+}
+
+function GlowButton({ href, external, className, children }: { href: string; external?: boolean; className: string; children: ReactNode }) {
+  const ref = useRef<HTMLAnchorElement>(null);
+
+  function handleMouseMove(e: MouseEvent<HTMLAnchorElement>) {
+    const node = ref.current;
+    if (!node) return;
+    const rect = node.getBoundingClientRect();
+    node.style.setProperty('--x', (e.clientX - rect.left) + 'px');
+    node.style.setProperty('--y', (e.clientY - rect.top) + 'px');
+  }
+
+  return (
+    
+     <a ref={ref}
+      href={href}
+      target={external ? '_blank' : undefined}
+      rel={external ? 'noopener noreferrer' : undefined}
+      onMouseMove={handleMouseMove}
+      className={"group relative overflow-hidden " + className}
+    >
+      <span
+        className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+        style={{
+          background: 'radial-gradient(120px circle at var(--x, 50%) var(--y, 50%), rgba(255,255,255,0.18), transparent 70%)',
+        }}
+      />
+      <span className="relative flex items-center gap-2">{children}</span>
+    </a>
+  );
+}
+
+function TiltCard({ children, className }: { children: ReactNode; className?: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  function handleMouseMove(e: MouseEvent<HTMLDivElement>) {
+    const node = ref.current;
+    if (!node) return;
+    const rect = node.getBoundingClientRect();
+    const px = (e.clientX - rect.left) / rect.width - 0.5;
+    const py = (e.clientY - rect.top) / rect.height - 0.5;
+    node.style.transform = "perspective(600px) rotateY(" + (px * 8) + "deg) rotateX(" + (py * -8) + "deg) translateY(-2px)";
+  }
+
+  function handleMouseLeave() {
+    const node = ref.current;
+    if (!node) return;
+    node.style.transform = "perspective(600px) rotateY(0deg) rotateX(0deg) translateY(0px)";
+  }
+
+  return (
+    <div
+      ref={ref}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      className={"transition-transform duration-200 ease-out will-change-transform " + className}
     >
       {children}
     </div>
@@ -97,165 +155,183 @@ function Reveal({ children, className = '' }: { children: ReactNode; className?:
 
 export default function AboutPage() {
   return (
-    <div className="min-h-screen bg-stone-50 text-stone-900">
-      <header className="sticky top-0 z-20 border-b border-stone-200/80 bg-stone-50/90 backdrop-blur">
+    <div className="min-h-screen bg-white dark:bg-neutral-950">
+      <header className="sticky top-0 z-30 border-b border-neutral-200 bg-white/90 backdrop-blur dark:border-neutral-800 dark:bg-neutral-950/90">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <Link href="/" className="text-lg font-semibold tracking-tight">
-            Signature <span className="text-[#D4AF72]">Estates</span>
+          <Link href="/" className="text-lg font-semibold tracking-tight text-neutral-900 dark:text-white">
+            Signature Estates
           </Link>
-          
-           <a href={`https://wa.me/${WHATSAPP_NUMBER}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-2 rounded-full bg-stone-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-amber-600"
+          <GlowButton
+            href={"https://wa.me/" + WHATSAPP_NUMBER}
+            external
+            className="flex items-center gap-2 rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-neutral-700 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
           >
             <MessageCircle size={15} /> WhatsApp Us
-          </a>
+          </GlowButton>
         </div>
       </header>
 
-      <section className="relative overflow-hidden px-6 py-24 sm:py-32">
-        <div className="pointer-events-none absolute -top-24 right-0 h-96 w-96 rounded-full bg-amber-200/40 blur-3xl" />
-        <div className="pointer-events-none absolute bottom-0 left-0 h-72 w-72 rounded-full bg-stone-300/30 blur-3xl" />
-        <div className="relative mx-auto max-w-3xl text-center">
-          <Reveal>
-            <span className="mb-4 inline-block text-xs font-semibold uppercase tracking-[0.2em] text-amber-600">
-              About Signature Estates
-            </span>
-          </Reveal>
-          <Reveal>
-            <h1 className="text-4xl font-semibold leading-tight tracking-tight text-stone-900 sm:text-5xl">
-              More Than Property.
-              <br />
-              We Build Relationships.
-            </h1>
-          </Reveal>
-          <Reveal className="mt-8 flex flex-wrap items-center justify-center gap-3">
-            
-             <a href={`tel:${CALL_NUMBER}`}
-              className="flex items-center gap-2 rounded-full border border-stone-300 bg-white px-5 py-2.5 text-sm font-medium text-stone-800 shadow-sm transition-colors hover:border-amber-500 hover:text-amber-700"
-            >
-              <Phone size={15} /> {CALL_NUMBER}
-            </a>
-            
-             <a href={`https://wa.me/${WHATSAPP_NUMBER}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 rounded-full bg-amber-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-amber-700"
-            >
-              <MessageCircle size={15} /> Chat on WhatsApp
-            </a>
-          </Reveal>
+      <section className="relative flex min-h-[85vh] items-center overflow-hidden">
+        <div className="absolute inset-0">
+          <Image
+            src="/auth-showcase.png"
+            alt="Signature Estates"
+            fill
+            priority
+            className="object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-black/30" />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/30 to-transparent" />
+        </div>
+
+        <div className="relative z-10 mx-auto max-w-6xl px-6 py-24">
+          <div className="max-w-2xl">
+            <Reveal>
+              <span className="mb-5 inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.15em] text-white backdrop-blur-sm">
+                <Sparkles size={13} /> About Signature Estates
+              </span>
+            </Reveal>
+            <Reveal delayMs={100}>
+              <h1 className="text-5xl font-semibold leading-[1.05] tracking-tight text-white sm:text-6xl lg:text-7xl">
+                More Than
+                <br />
+                Property.
+                <br />
+                <span className="text-white/70">We Build Relationships.</span>
+              </h1>
+            </Reveal>
+            <Reveal delayMs={200} className="mt-8 flex flex-wrap items-center gap-3">
+              <GlowButton
+                href={"tel:" + CALL_NUMBER}
+                className="rounded-lg border border-white/30 bg-white/10 px-5 py-3 text-sm font-medium text-white backdrop-blur-sm transition-colors hover:bg-white/20"
+              >
+                <Phone size={15} /> {CALL_NUMBER}
+              </GlowButton>
+              <GlowButton
+                href={"https://wa.me/" + WHATSAPP_NUMBER}
+                external
+                className="rounded-lg bg-white px-5 py-3 text-sm font-medium text-neutral-900 transition-colors hover:bg-neutral-100"
+              >
+                <MessageCircle size={15} /> Chat on WhatsApp
+              </GlowButton>
+            </Reveal>
+          </div>
+        </div>
+
+        <div className="absolute bottom-8 left-1/2 z-10 -translate-x-1/2 animate-bounce text-white/60">
+          <ArrowDown size={20} />
         </div>
       </section>
 
-      <section className="border-t border-stone-200 bg-white px-6 py-20">
-        <div className="mx-auto grid max-w-5xl gap-12 sm:grid-cols-2 sm:items-center">
+      <section className="border-t border-neutral-200 px-6 py-24 dark:border-neutral-800">
+        <div className="mx-auto grid max-w-5xl gap-10 sm:grid-cols-2 sm:items-center">
           <Reveal>
-            <span className="mb-3 inline-block text-xs font-semibold uppercase tracking-[0.2em] text-amber-600">
+            <span className="mb-4 inline-block text-xs font-semibold uppercase tracking-[0.15em] text-neutral-500 dark:text-neutral-400">
               Our Story
             </span>
-            <p className="text-lg leading-relaxed text-stone-700">
+            <p className="text-xl leading-relaxed tracking-tight text-neutral-800 dark:text-neutral-100">
               Our journey began by helping people in our local market make better property
-              decisions. By combining local market knowledge with a personal approach, we've
-              built our business around understanding each client's requirements — not just
-              presenting them with listings.
+              decisions.
+            </p>
+            <p className="mt-4 max-w-md text-base leading-relaxed text-neutral-500 dark:text-neutral-400">
+              By combining local market knowledge with a personal approach, we have built our
+              business around understanding each client&apos;s requirements, not just presenting
+              them with listings.
             </p>
           </Reveal>
-          <Reveal>
-            <div className="rounded-2xl border border-stone-200 bg-stone-50 p-8">
-              <Home className="mb-4 text-amber-600" size={28} />
-              <p className="text-sm leading-relaxed text-stone-600">
-                Every client relationship starts with listening — to what you actually need,
-                not what's easiest to sell. That's the difference between a transaction and a
+          <Reveal delayMs={100}>
+            <TiltCard className="rounded-2xl border border-neutral-200 bg-white p-8 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+              <Home className="mb-4 text-neutral-400 dark:text-neutral-500" size={28} />
+              <p className="text-base leading-relaxed text-neutral-600 dark:text-neutral-300">
+                Every client relationship starts with listening, to what you actually need, not
+                what is easiest to sell. That is the difference between a transaction and a
                 relationship.
               </p>
-            </div>
+            </TiltCard>
           </Reveal>
         </div>
       </section>
 
-      <section className="px-6 py-20">
-        <div className="mx-auto grid max-w-5xl grid-cols-2 gap-6 sm:grid-cols-4">
+      <section className="px-6 py-16">
+        <div className="mx-auto grid max-w-5xl grid-cols-2 gap-4 sm:grid-cols-4">
           {[
             { icon: MapPin, label: 'Local Market Expertise' },
             { icon: Handshake, label: 'Personal Assistance' },
             { icon: Users, label: 'End-to-End Support' },
             { icon: ShieldCheck, label: 'Verified Property Information' },
-          ].map((item) => (
-            <Reveal key={item.label}>
-              <div className="flex flex-col items-center gap-3 rounded-xl border border-stone-200 bg-white p-6 text-center transition-shadow hover:shadow-md">
-                <item.icon className="text-amber-600" size={24} />
-                <p className="text-sm font-medium text-stone-800">{item.label}</p>
-              </div>
+          ].map((item, i) => (
+            <Reveal key={item.label} delayMs={i * 80}>
+              <TiltCard className="flex flex-col items-center gap-3 rounded-xl border border-neutral-200 bg-white p-6 text-center dark:border-neutral-800 dark:bg-neutral-900">
+                <item.icon className="text-neutral-400 dark:text-neutral-500" size={24} />
+                <p className="text-xs font-medium text-neutral-700 dark:text-neutral-300">{item.label}</p>
+              </TiltCard>
             </Reveal>
           ))}
         </div>
       </section>
 
-      <section className="border-t border-stone-200 bg-white px-6 py-20">
+      <section className="border-t border-neutral-200 px-6 py-24 dark:border-neutral-800">
         <div className="mx-auto max-w-5xl">
-          <Reveal className="mb-10 text-center">
-            <span className="mb-3 inline-block text-xs font-semibold uppercase tracking-[0.2em] text-amber-600">
+          <Reveal className="mb-12 text-center">
+            <span className="mb-3 inline-block text-xs font-semibold uppercase tracking-[0.15em] text-neutral-500 dark:text-neutral-400">
               Who We Are
             </span>
-            <h2 className="text-2xl font-semibold text-stone-900 sm:text-3xl">Meet the Founders</h2>
+            <h2 className="text-3xl font-semibold tracking-tight text-neutral-900 dark:text-white sm:text-4xl">
+              Meet the Founders
+            </h2>
           </Reveal>
-          <div className="grid grid-cols-2 gap-6 sm:grid-cols-4">
-            {FOUNDERS.map((founder) => (
-              <Reveal key={founder.name}>
-                <div className="text-center">
-                  <div className="mx-auto mb-3 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-amber-100 to-stone-200 text-lg font-semibold text-stone-700">
+          <div className="grid grid-cols-2 gap-5 sm:grid-cols-4">
+            {FOUNDERS.map((founder, i) => (
+              <Reveal key={founder.name} delayMs={i * 80}>
+                <TiltCard className="rounded-xl border border-neutral-200 bg-white p-6 text-center dark:border-neutral-800 dark:bg-neutral-900">
+                  <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-neutral-900 text-base font-semibold text-white dark:bg-white dark:text-neutral-900">
                     {founder.name.split(' ').map((n) => n[0]).join('')}
                   </div>
-                  <p className="text-sm font-semibold text-stone-900">{founder.name}</p>
-                  <p className="mt-0.5 text-xs text-stone-500">{founder.role}</p>
-                </div>
+                  <p className="text-sm font-semibold text-neutral-900 dark:text-white">{founder.name}</p>
+                  <p className="mt-1 text-xs leading-snug text-neutral-500 dark:text-neutral-400">{founder.role}</p>
+                </TiltCard>
               </Reveal>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="px-6 py-20">
+      <section className="px-6 py-24">
         <div className="mx-auto max-w-4xl">
-          <Reveal className="mb-10 text-center">
-            <span className="mb-3 inline-block text-xs font-semibold uppercase tracking-[0.2em] text-amber-600">
+          <Reveal className="mb-12 text-center">
+            <span className="mb-3 inline-block text-xs font-semibold uppercase tracking-[0.15em] text-neutral-500 dark:text-neutral-400">
               Talk to Us
             </span>
-            <h2 className="text-2xl font-semibold text-stone-900 sm:text-3xl">
+            <h2 className="text-3xl font-semibold tracking-tight text-neutral-900 dark:text-white sm:text-4xl">
               Reach the Right Team, Directly
             </h2>
           </Reveal>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <Reveal>
-              <ContactCard label="Sales & Enquiries" number={SALES_NUMBER} whatsapp={SALES_NUMBER.replace('+', '')} />
+              <ContactCard label="Sales and Enquiries" number={SALES_NUMBER} whatsapp={SALES_NUMBER.replace('+', '')} />
             </Reveal>
-            <Reveal>
-              <ContactCard label="Site Visits & Assistance" number={SITE_VISIT_NUMBER} whatsapp={SITE_VISIT_NUMBER.replace('+', '')} />
+            <Reveal delayMs={80}>
+              <ContactCard label="Site Visits and Assistance" number={SITE_VISIT_NUMBER} whatsapp={SITE_VISIT_NUMBER.replace('+', '')} />
             </Reveal>
           </div>
 
-          <Reveal className="mt-12 flex justify-center gap-5">
-            <a href={SOCIAL_LINKS.instagram} target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="flex h-11 w-11 items-center justify-center rounded-full border border-stone-300 text-stone-600 transition-colors hover:border-amber-500 hover:text-amber-700">
+          <Reveal className="mt-12 flex justify-center gap-4">
+            <a href={SOCIAL_LINKS.instagram} target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="flex h-11 w-11 items-center justify-center rounded-lg border border-neutral-200 text-neutral-500 transition-all hover:-translate-y-0.5 hover:bg-neutral-50 hover:text-neutral-900 dark:border-neutral-800 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-white">
               <InstagramIcon />
             </a>
-            <a href={SOCIAL_LINKS.facebook} target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="flex h-11 w-11 items-center justify-center rounded-full border border-stone-300 text-stone-600 transition-colors hover:border-amber-500 hover:text-amber-700">
+            <a href={SOCIAL_LINKS.facebook} target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="flex h-11 w-11 items-center justify-center rounded-lg border border-neutral-200 text-neutral-500 transition-all hover:-translate-y-0.5 hover:bg-neutral-50 hover:text-neutral-900 dark:border-neutral-800 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-white">
               <FacebookIcon />
             </a>
-            <a href={SOCIAL_LINKS.youtube} target="_blank" rel="noopener noreferrer" aria-label="YouTube" className="flex h-11 w-11 items-center justify-center rounded-full border border-stone-300 text-stone-600 transition-colors hover:border-amber-500 hover:text-amber-700">
-              <YoutubeIcon />
-            </a>
-            <a href={SOCIAL_LINKS.linkedin} target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" className="flex h-11 w-11 items-center justify-center rounded-full border border-stone-300 text-stone-600 transition-colors hover:border-amber-500 hover:text-amber-700">
+            <a href={SOCIAL_LINKS.youtube} target="_blank" rel="noopener noreferrer" aria-label="YouTube" className="flex h-11 w-11 items-center justify-center rounded-lg border border-neutral-200 text-neutral-500 transition-all hover:-translate-y-0.5 hover:bg-neutral-50 hover:text-neutral-900 dark:border-neutral-800 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-white">
               <LinkedinIcon />
             </a>
           </Reveal>
         </div>
       </section>
 
-      <footer className="border-t border-stone-200 bg-white px-6 py-8 text-center text-xs text-stone-400">
-        © {new Date().getFullYear()} Signature Estates. More than property — we build relationships.
+      <footer className="border-t border-neutral-200 px-6 py-8 text-center text-xs text-neutral-400 dark:border-neutral-800 dark:text-neutral-500">
+        {new Date().getFullYear()} Signature Estates. More than property, we build relationships.
       </footer>
     </div>
   );
@@ -263,17 +339,21 @@ export default function AboutPage() {
 
 function ContactCard({ label, number, whatsapp }: { label: string; number: string; whatsapp: string }) {
   return (
-    <div className="rounded-2xl border border-stone-200 bg-white p-6">
-      <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-amber-600">{label}</p>
-      <p className="mb-4 text-lg font-semibold text-stone-900">{number}</p>
+    <TiltCard className="rounded-xl border border-neutral-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+      <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">{label}</p>
+      <p className="mb-5 text-xl font-semibold tracking-tight text-neutral-900 dark:text-white">{number}</p>
       <div className="flex gap-2">
-        <a href={`tel:${number}`} className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-stone-300 py-2 text-xs font-medium text-stone-700 transition-colors hover:border-amber-500 hover:text-amber-700">
+        <a href={"tel:" + number} className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-neutral-200 py-2.5 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-50 dark:border-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-800">
           <Phone size={13} /> Call
         </a>
-        <a href={`https://wa.me/${whatsapp}`} target="_blank" rel="noopener noreferrer" className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-amber-600 py-2 text-xs font-medium text-white transition-colors hover:bg-amber-700">
+        <GlowButton
+          href={"https://wa.me/" + whatsapp}
+          external
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-neutral-900 py-2.5 text-xs font-medium text-white transition-colors hover:bg-neutral-700 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
+        >
           <MessageCircle size={13} /> WhatsApp
-        </a>
+        </GlowButton>
       </div>
-    </div>
+    </TiltCard>
   );
 }
