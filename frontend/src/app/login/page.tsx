@@ -50,9 +50,10 @@ export default function LoginPage() {
             <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-neutral-900 text-white dark:bg-white dark:text-neutral-900">
               <Building2 size={18} />
             </span>
-            <span className="text-base font-semibold tracking-tight text-neutral-900 dark:text-white">
-              Real Estate OS
-            </span>
+            
+  <span className="whitespace-nowrap text-lg font-semibold tracking-tight">
+    Signature <span className="text-[#D4AF72]">Estates</span>
+  </span>
           </div>
 
           <h1 className="text-2xl font-semibold tracking-tight text-neutral-900 dark:text-white">

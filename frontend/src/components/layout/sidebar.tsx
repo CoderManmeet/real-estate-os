@@ -15,6 +15,7 @@ import {
   BarChart3,
   LogOut,
   X,
+  HeartHandshakeIcon,
   type LucideIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -24,6 +25,18 @@ type NavItem = { label: string; href: string; icon: LucideIcon };
 type NavGroup = { title: string; items: NavItem[] };
 
 const navGroups: NavGroup[] = [
+
+
+   {
+    title: 'About',
+    items: [
+      { label: 'Know about us', href: '/about', icon: HeartHandshakeIcon },
+    ],
+  },
+
+
+
+
   {
     title: 'Overview',
     items: [
@@ -111,13 +124,14 @@ function BrandMark() {
         <Building2 size={17} />
       </span>
       <div className="flex flex-col leading-none">
-        <span className="text-sm font-semibold tracking-tight text-neutral-900 dark:text-white">
-          Real Estate OS
-        </span>
-        <span className="mt-0.5 text-[11px] text-neutral-400 dark:text-neutral-600">
-          Agency workspace
-        </span>
-      </div>
+  <span className="whitespace-nowrap text-lg font-semibold tracking-tight">
+    Signature <span className="text-[#D4AF72]">Estates</span>
+  </span>
+
+  <span className="mt-0.5 text-[11px] text-neutral-400 dark:text-neutral-600">
+    Agency workspace
+  </span>
+</div>
     </div>
   );
 }
