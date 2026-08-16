@@ -4,6 +4,7 @@ import './globals.css';
 import { ThemeProvider } from '@/components/providers/theme-provider';
 import { AuthProvider } from '@/context/auth-context';
 import { Toaster } from 'react-hot-toast';
+import { AmbientBackground } from '@/components/layout/ambient-background';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -32,14 +33,16 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} bg-neutral-50 dark:bg-neutral-950`}
+      className={`${inter.variable} bg-background`}
       suppressHydrationWarning
     >
-      <body className="bg-neutral-50 text-neutral-900 antialiased dark:bg-neutral-950 dark:text-white">
-        <ThemeProvider>
-          <AuthProvider>
-            {children}
-            <Toaster
+      <body className="relative min-h-screen bg-background text-foreground antialiased">
+        <AmbientBackground />
+        <div className="relative z-10 min-h-screen">
+          <ThemeProvider>
+            <AuthProvider>
+              {children}
+              <Toaster
               position="top-right"
               toastOptions={{
                 style: {
@@ -48,8 +51,9 @@ export default function RootLayout({
                 },
               }}
             />
-          </AuthProvider>
-        </ThemeProvider>
+            </AuthProvider>
+          </ThemeProvider>
+        </div>
       </body>
     </html>
   );

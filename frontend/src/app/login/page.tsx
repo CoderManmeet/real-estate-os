@@ -41,7 +41,7 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen bg-neutral-50 dark:bg-neutral-950">
+    <main className="flex min-h-screen bg-transparent">
       <AuthShowcase />
 
       <div className="flex w-full flex-col justify-center px-6 py-12 lg:w-[46%] lg:px-16">

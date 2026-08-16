@@ -11,7 +11,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   return (
     <RouteGuard>
-      <div className="flex h-screen overflow-hidden bg-neutral-50 dark:bg-neutral-950">
+      <div className="relative flex h-screen overflow-hidden bg-transparent">
         <Sidebar mobileOpen={mobileOpen} onClose={() => setMobileOpen(false)} />
         <div className="flex flex-1 flex-col overflow-hidden">
           <Navbar onMenuClick={() => setMobileOpen(true)} />

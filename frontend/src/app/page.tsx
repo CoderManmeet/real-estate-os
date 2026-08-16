@@ -2,7 +2,7 @@ import Link from 'next/link';
 
 export default function Home() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-4 bg-neutral-50 dark:bg-neutral-950">
+    <main className="flex min-h-screen flex-col items-center justify-center gap-4 bg-transparent">
       <h1 className="text-3xl font-semibold">
         <span className="whitespace-nowrap tracking-tight">
     Signature <span className="text-[#D4AF72]">Estates</span>

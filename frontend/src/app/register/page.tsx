@@ -45,7 +45,7 @@ export default function RegisterPage() {
     'w-full rounded-lg border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900 shadow-sm outline-none transition-colors placeholder:text-neutral-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/15 dark:border-neutral-800 dark:bg-neutral-900 dark:text-white dark:placeholder:text-neutral-600';
 
   return (
-    <main className="flex min-h-screen bg-neutral-50 dark:bg-neutral-950">
+    <main className="flex min-h-screen bg-transparent">
       <AuthShowcase />
 
       <div className="flex w-full flex-col justify-center px-6 py-12 lg:w-[46%] lg:px-16">

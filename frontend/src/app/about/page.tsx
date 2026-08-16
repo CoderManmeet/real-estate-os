@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useEffect, useRef, useState, ReactNode, MouseEvent } from 'react';
 import Link from 'next/link';
@@ -155,7 +155,7 @@ function TiltCard({ children, className }: { children: ReactNode; className?: st
 
 export default function AboutPage() {
   return (
-    <div className="min-h-screen bg-white dark:bg-neutral-950">
+    <div className="min-h-screen bg-transparent">
       <header className="sticky top-0 z-30 border-b border-neutral-200 bg-white/90 backdrop-blur dark:border-neutral-800 dark:bg-neutral-950/90">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <Link href="/" className="text-lg font-semibold tracking-tight text-neutral-900 dark:text-white">
