@@ -190,24 +190,53 @@ export default function ClientDetailPage() {
               </div>
             )}
 
-            <div className="mt-4 space-y-3">
+                        <div className="mt-4 space-y-3">
               {client.requirements && client.requirements.length > 0 ? (
-                client.requirements.map((req) => (
-                  <div key={req.id} className="rounded-lg bg-neutral-50 p-3 text-sm dark:bg-neutral-800/50">
-                    <p className="font-medium text-neutral-900 dark:text-white">
-                      {req.propertyType} in {req.preferredCity}
-                    </p>
-                    {(req.minBudget || req.maxBudget) && (
-                      <p className="mt-1 text-neutral-500 dark:text-neutral-400">
-                        {req.minBudget ? formatPrice(req.minBudget) : 'Any'} –{' '}
-                        {req.maxBudget ? formatPrice(req.maxBudget) : 'Any'}
+                client.requirements.map((req) => {
+                  const chips: string[] = [];
+                  if (req.purpose) chips.push(req.purpose);
+                  if (req.bedrooms != null) chips.push(`${req.bedrooms} BHK`);
+                  if (req.minArea || req.maxArea)
+                    chips.push(`${req.minArea ?? 'Any'}–${req.maxArea ?? 'Any'} sqft`);
+                  if (req.furnishing) chips.push(req.furnishing.replace('_', ' ').toLowerCase());
+                  if (req.parking != null) chips.push(req.parking ? 'Parking' : 'No parking');
+                  if (req.facing) chips.push(req.facing.replace('_', '-'));
+                  if (req.floorPreference) chips.push(req.floorPreference);
+                  if (req.urgency) chips.push(`${req.urgency} urgency`);
+                  return (
+                    <div key={req.id} className="rounded-lg bg-neutral-50 p-3 text-sm dark:bg-neutral-800/50">
+                      <p className="font-medium text-neutral-900 dark:text-white">
+                        {req.propertyType} in {req.preferredCity}
                       </p>
-                    )}
-                    {req.bedrooms != null && (
-                      <p className="text-neutral-500 dark:text-neutral-400">{req.bedrooms} BHK</p>
-                    )}
-                  </div>
-                ))
+                      {(req.minBudget || req.maxBudget) && (
+                        <p className="mt-1 text-neutral-500 dark:text-neutral-400">
+                          {req.minBudget ? formatPrice(req.minBudget) : 'Any'} –{' '}
+                          {req.maxBudget ? formatPrice(req.maxBudget) : 'Any'}
+                        </p>
+                      )}
+                      {chips.length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                          {chips.map((c, i) => (
+                            <span
+                              key={i}
+                              className="rounded-full bg-white px-2 py-0.5 text-xs text-neutral-600 capitalize dark:bg-neutral-900 dark:text-neutral-300"
+                            >
+                              {c}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      {req.preferredLocations && req.preferredLocations.length > 0 && (
+                        <p className="mt-2 text-xs text-neutral-400 dark:text-neutral-500">
+                          {req.preferredLocations.join(' · ')}
+                        </p>
+                      )}
+                      {req.notes && (
+                        <p className="mt-1 text-xs text-neutral-400 dark:text-neutral-500">{req.notes}</p>
+                      )}
+                    </div>
+                  );
+                })
               ) : (
                 !showRequirementForm && (
                   <p className="text-sm text-neutral-500 dark:text-neutral-400">

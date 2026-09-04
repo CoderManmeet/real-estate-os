@@ -10,13 +10,28 @@ export type TimelineEventType =
   | 'NOTE'
   | 'OTHER';
 
+export type RequirementFurnishing = 'UNFURNISHED' | 'SEMI_FURNISHED' | 'FURNISHED';
+export type RequirementPurpose = 'BUY' | 'RENT' | 'INVESTMENT';
+export type RequirementUrgency = 'LOW' | 'MEDIUM' | 'HIGH';
+
 export interface ClientRequirement {
   id: string;
   propertyType: PropertyType;
   preferredCity: string;
+  purpose?: RequirementPurpose | null;
   minBudget?: number | null;
   maxBudget?: number | null;
   bedrooms?: number | null;
+  minArea?: number | null;
+  maxArea?: number | null;
+  furnishing?: RequirementFurnishing | null;
+  parking?: boolean | null;
+  facing?: string | null;
+  floorPreference?: string | null;
+  possessionBy?: string | null;
+  financing?: string | null;
+  urgency?: RequirementUrgency | null;
+  preferredLocations?: string[];
   notes?: string | null;
   createdAt: string;
 }
@@ -74,11 +89,23 @@ export interface ClientFilters {
   status?: ClientStatus;
   search?: string;
 }
+
 export interface RequirementFormValues {
   propertyType: PropertyType;
   preferredCity: string;
+  purpose?: RequirementPurpose;
   minBudget?: number;
   maxBudget?: number;
   bedrooms?: number;
+  minArea?: number;
+  maxArea?: number;
+  furnishing?: RequirementFurnishing;
+  parking?: boolean;
+  facing?: string;
+  floorPreference?: string;
+  possessionBy?: string;
+  financing?: string;
+  urgency?: RequirementUrgency;
+  preferredLocations?: string[];
   notes?: string;
 }

@@ -6,18 +6,43 @@ import { z } from 'zod';
 import { useState } from 'react';
 import { RequirementFormValues } from '@/types/client';
 
+// All fields are captured as strings from the DOM, then normalized on submit.
+// Only preferredCity is validated here; everything else is optional.
 const requirementFormSchema = z.object({
   propertyType: z.enum(['APARTMENT', 'VILLA', 'PLOT', 'COMMERCIAL', 'OTHER']),
   preferredCity: z.string().min(2, 'City is required'),
-  minBudget: z.coerce.number().nonnegative().optional(),
-  maxBudget: z.coerce.number().positive().optional(),
-  bedrooms: z.coerce.number().int().nonnegative().optional(),
+  purpose: z.string().optional(),
+  minBudget: z.string().optional(),
+  maxBudget: z.string().optional(),
+  bedrooms: z.string().optional(),
+  minArea: z.string().optional(),
+  maxArea: z.string().optional(),
+  furnishing: z.string().optional(),
+  parking: z.string().optional(),
+  facing: z.string().optional(),
+  floorPreference: z.string().optional(),
+  possessionBy: z.string().optional(),
+  financing: z.string().optional(),
+  urgency: z.string().optional(),
+  preferredLocations: z.string().optional(),
   notes: z.string().optional(),
 });
+
+type RequirementFormRaw = z.infer<typeof requirementFormSchema>;
 
 const inputClass =
   'w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 outline-none focus:border-neutral-400 dark:border-neutral-800 dark:bg-neutral-950 dark:text-white';
 const labelClass = 'mb-1 block text-sm font-medium text-neutral-700 dark:text-neutral-300';
+
+function toNum(v?: string): number | undefined {
+  if (!v || !v.trim()) return undefined;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : undefined;
+}
+
+function toStr(v?: string): string | undefined {
+  return v && v.trim() ? v.trim() : undefined;
+}
 
 export function RequirementForm({
   onSubmit,
@@ -32,11 +57,37 @@ export function RequirementForm({
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<z.input<typeof requirementFormSchema>, unknown, RequirementFormValues>({
+  } = useForm<RequirementFormRaw>({
     resolver: zodResolver(requirementFormSchema),
+    defaultValues: { propertyType: 'APARTMENT', preferredCity: '' },
   });
 
-  async function handleFormSubmit(values: RequirementFormValues) {
+  async function handleFormSubmit(raw: RequirementFormRaw) {
+    const values: RequirementFormValues = {
+      propertyType: raw.propertyType,
+      preferredCity: raw.preferredCity.trim(),
+      purpose: (toStr(raw.purpose) as RequirementFormValues['purpose']) ?? undefined,
+      minBudget: toNum(raw.minBudget),
+      maxBudget: toNum(raw.maxBudget),
+      bedrooms: toNum(raw.bedrooms),
+      minArea: toNum(raw.minArea),
+      maxArea: toNum(raw.maxArea),
+      furnishing: (toStr(raw.furnishing) as RequirementFormValues['furnishing']) ?? undefined,
+      parking:
+        raw.parking === 'true' ? true : raw.parking === 'false' ? false : undefined,
+      facing: toStr(raw.facing),
+      floorPreference: toStr(raw.floorPreference),
+      possessionBy: raw.possessionBy
+        ? new Date(`${raw.possessionBy}T00:00:00`).toISOString()
+        : undefined,
+      financing: toStr(raw.financing),
+      urgency: (toStr(raw.urgency) as RequirementFormValues['urgency']) ?? undefined,
+      preferredLocations: raw.preferredLocations
+        ? raw.preferredLocations.split(',').map((s) => s.trim()).filter(Boolean)
+        : [],
+      notes: toStr(raw.notes),
+    };
+
     setIsSubmitting(true);
     try {
       await onSubmit(values);
@@ -47,6 +98,7 @@ export function RequirementForm({
 
   return (
     <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-3">
+      {/* Basics */}
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className={labelClass}>Property type</label>
@@ -67,6 +119,28 @@ export function RequirementForm({
         </div>
       </div>
 
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className={labelClass}>Purpose</label>
+          <select {...register('purpose')} className={inputClass}>
+            <option value="">Any</option>
+            <option value="BUY">Buy</option>
+            <option value="RENT">Rent</option>
+            <option value="INVESTMENT">Investment</option>
+          </select>
+        </div>
+        <div>
+          <label className={labelClass}>Urgency</label>
+          <select {...register('urgency')} className={inputClass}>
+            <option value="">Unset</option>
+            <option value="LOW">Low</option>
+            <option value="MEDIUM">Medium</option>
+            <option value="HIGH">High</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Budget */}
       <div className="grid grid-cols-3 gap-3">
         <div>
           <label className={labelClass}>Min budget</label>
@@ -80,6 +154,82 @@ export function RequirementForm({
           <label className={labelClass}>Bedrooms</label>
           <input type="number" {...register('bedrooms')} className={inputClass} placeholder="3" />
         </div>
+      </div>
+
+      {/* Size */}
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className={labelClass}>Min area (sqft)</label>
+          <input type="number" {...register('minArea')} className={inputClass} placeholder="900" />
+        </div>
+        <div>
+          <label className={labelClass}>Max area (sqft)</label>
+          <input type="number" {...register('maxArea')} className={inputClass} placeholder="1400" />
+        </div>
+      </div>
+
+      {/* Preferences */}
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className={labelClass}>Furnishing</label>
+          <select {...register('furnishing')} className={inputClass}>
+            <option value="">Any</option>
+            <option value="UNFURNISHED">Unfurnished</option>
+            <option value="SEMI_FURNISHED">Semi-furnished</option>
+            <option value="FURNISHED">Furnished</option>
+          </select>
+        </div>
+        <div>
+          <label className={labelClass}>Parking</label>
+          <select {...register('parking')} className={inputClass}>
+            <option value="">Any</option>
+            <option value="true">Required</option>
+            <option value="false">Not required</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className={labelClass}>Facing</label>
+          <select {...register('facing')} className={inputClass}>
+            <option value="">Any</option>
+            <option value="NORTH">North</option>
+            <option value="EAST">East</option>
+            <option value="SOUTH">South</option>
+            <option value="WEST">West</option>
+            <option value="NORTH_EAST">North-East</option>
+            <option value="NORTH_WEST">North-West</option>
+            <option value="SOUTH_EAST">South-East</option>
+            <option value="SOUTH_WEST">South-West</option>
+          </select>
+        </div>
+        <div>
+          <label className={labelClass}>Floor preference</label>
+          <input {...register('floorPreference')} className={inputClass} placeholder="High floor" />
+        </div>
+      </div>
+
+      {/* Timeline / finance */}
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className={labelClass}>Possession by</label>
+          <input type="date" {...register('possessionBy')} className={inputClass} />
+        </div>
+        <div>
+          <label className={labelClass}>Financing</label>
+          <input {...register('financing')} className={inputClass} placeholder="Home loan / Cash" />
+        </div>
+      </div>
+
+      {/* Locations + notes */}
+      <div>
+        <label className={labelClass}>Preferred locations</label>
+        <input
+          {...register('preferredLocations')}
+          className={inputClass}
+          placeholder="Kharar, Mohali, Zirakpur (comma separated)"
+        />
       </div>
 
       <div>
