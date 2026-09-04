@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.propertyRefSchema = exports.createTimelineEventSchema = exports.createNoteSchema = exports.createRequirementSchema = exports.listClientsQuerySchema = exports.updateClientSchema = exports.createClientSchema = void 0;
+exports.regeneratePortalSchema = exports.propertyRefSchema = exports.createTimelineEventSchema = exports.createNoteSchema = exports.createRequirementSchema = exports.listClientsQuerySchema = exports.updateClientSchema = exports.createClientSchema = void 0;
 const zod_1 = require("zod");
 exports.createClientSchema = zod_1.z.object({
     fullName: zod_1.z.string().min(2, 'Full name is required'),
@@ -26,6 +26,17 @@ exports.createRequirementSchema = zod_1.z.object({
     minBudget: zod_1.z.number().nonnegative().optional(),
     maxBudget: zod_1.z.number().positive().optional(),
     bedrooms: zod_1.z.number().int().nonnegative().optional(),
+    minArea: zod_1.z.number().nonnegative().optional(),
+    maxArea: zod_1.z.number().positive().optional(),
+    furnishing: zod_1.z.enum(['UNFURNISHED', 'SEMI_FURNISHED', 'FURNISHED']).optional(),
+    parking: zod_1.z.boolean().optional(),
+    facing: zod_1.z.string().optional(),
+    floorPreference: zod_1.z.string().optional(),
+    possessionBy: zod_1.z.string().datetime().optional(),
+    purpose: zod_1.z.enum(['BUY', 'RENT', 'INVESTMENT']).optional(),
+    financing: zod_1.z.string().optional(),
+    urgency: zod_1.z.enum(['LOW', 'MEDIUM', 'HIGH']).optional(),
+    preferredLocations: zod_1.z.array(zod_1.z.string()).default([]),
     notes: zod_1.z.string().optional(),
 });
 exports.createNoteSchema = zod_1.z.object({
@@ -37,4 +48,7 @@ exports.createTimelineEventSchema = zod_1.z.object({
 });
 exports.propertyRefSchema = zod_1.z.object({
     propertyId: zod_1.z.string().uuid('Invalid property id'),
+});
+exports.regeneratePortalSchema = zod_1.z.object({
+    expiresAt: zod_1.z.string().datetime().optional(),
 });

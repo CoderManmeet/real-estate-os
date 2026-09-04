@@ -10,10 +10,10 @@ import {
   createNoteSchema,
   createTimelineEventSchema,
   propertyRefSchema,
+  regeneratePortalSchema,
 } from '../validators/client.validator';
 import * as clientService from '../services/client.service';
 import { getOrCreatePortalLink } from '../services/client.service';
-
 
 function requireUser(req: AuthRequest) {
   if (!req.user) throw new AppError('Not authenticated', 401);
@@ -136,6 +136,34 @@ export async function getPortalLink(req: AuthRequest, res: Response, next: NextF
   try {
     const token = await getOrCreatePortalLink(getParam(req, 'id'));
     res.status(200).json({ success: true, data: { token } });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function regeneratePortalToken(req: AuthRequest, res: Response, next: NextFunction) {
+  try {
+    const input = regeneratePortalSchema.parse(req.body);
+    const token = await clientService.regeneratePortalToken(getParam(req, 'id'), input.expiresAt);
+    res.status(200).json({ success: true, data: { token } });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function revokePortalToken(req: AuthRequest, res: Response, next: NextFunction) {
+  try {
+    await clientService.revokePortalToken(getParam(req, 'id'));
+    res.status(200).json({ success: true, message: 'Portal link revoked' });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function getEngagement(req: AuthRequest, res: Response, next: NextFunction) {
+  try {
+    const data = await clientService.getClientEngagement(getParam(req, 'id'));
+    res.status(200).json({ success: true, data });
   } catch (err) {
     next(err);
   }

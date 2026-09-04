@@ -14,6 +14,8 @@ import analyticsRoutes from './analytics.routes';
 import portalRoutes from './portal.routes';
 import inventoryRoutes from './inventory.routes';
 import aiRoutes from './ai.routes';
+import collectionRoutes from './collection.routes';
+
 
 const router = Router();
 
@@ -32,5 +34,7 @@ router.use('/analytics', analyticsRoutes);
 router.use('/portal', portalRoutes);
 router.use('/inventory', inventoryRoutes);
 router.use('/ai', aiRoutes);
+router.use('/collections', collectionRoutes);
+
 
 export default router;

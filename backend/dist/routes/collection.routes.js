@@ -34,22 +34,16 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
-const portalController = __importStar(require("../controllers/portal.controller"));
-// Deliberately NOT behind authMiddleware -- the portal token itself is the
-// credential. Anyone with the exact link can view/act on that one client's data.
-// Expiry/revocation is enforced inside portal.service.ts.
+const collectionController = __importStar(require("../controllers/collection.controller"));
+const auth_middleware_1 = require("../middlewares/auth.middleware");
 const router = (0, express_1.Router)();
-// Collection portal (read). Two-segment path -- declared before "/:token" so the
-// single-segment param route below never captures "collection".
-router.get('/collection/:token', portalController.getCollection);
-// Legacy client-token portal (read).
-router.get('/:token', portalController.getPortal);
-// Actions -- ":token" here accepts a client portalToken OR a collection accessToken.
-router.post('/:token/favorites', portalController.addFavorite);
-router.delete('/:token/favorites/:propertyId', portalController.removeFavorite);
-router.post('/:token/feedback', portalController.setFeedback);
-router.post('/:token/comments', portalController.addComment);
-router.post('/:token/track', portalController.track);
-router.post('/:token/site-visit-requests', portalController.requestVisit);
-router.post('/:token/site-visits/:visitId/confirm', portalController.confirmVisit);
+router.use(auth_middleware_1.authMiddleware);
+router.get('/', collectionController.list);
+router.post('/', collectionController.create);
+router.get('/:id', collectionController.getOne);
+router.patch('/:id', collectionController.update);
+router.post('/:id/properties', collectionController.addProperty);
+router.delete('/:id/properties/:propertyId', collectionController.removeProperty);
+router.post('/:id/revoke', collectionController.revoke);
+router.post('/:id/regenerate', collectionController.regenerate);
 exports.default = router;

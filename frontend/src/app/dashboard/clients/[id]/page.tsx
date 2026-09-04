@@ -5,17 +5,22 @@ import { useParams, useRouter } from 'next/navigation';
 import { Phone, Mail, Trash2, Heart, Share2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Client, ClientStatus, RequirementFormValues } from '@/types/client';
+import { ClientEngagement } from '@/types/engagement';
 import {
   getClientRequest,
   updateClientRequest,
   deleteClientRequest,
   addRequirementRequest,
   addNoteRequest,
+  getClientEngagementRequest,
 } from '@/lib/api/client-api';
 import { ClientStatusBadge } from '@/components/clients/client-status-badge';
 import { RequirementForm } from '@/components/clients/requirement-form';
 import { NoteForm } from '@/components/clients/note-form';
 import { TimelineFeed } from '@/components/clients/timeline-feed';
+import { PortalAccessPanel } from '@/components/clients/portal-access-panel';
+import { CollectionManager } from '@/components/clients/collection-manager';
+import { EngagementSummary } from '@/components/clients/engagement-summary';
 
 const statuses: ClientStatus[] = ['NEW', 'CONTACTED', 'QUALIFIED', 'NEGOTIATION', 'CONVERTED', 'LOST'];
 
@@ -32,6 +37,9 @@ export default function ClientDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [showRequirementForm, setShowRequirementForm] = useState(false);
 
+  const [engagement, setEngagement] = useState<ClientEngagement | null>(null);
+  const [engagementLoading, setEngagementLoading] = useState(true);
+
   const fetchClient = useCallback(async () => {
     try {
       const data = await getClientRequest(params.id);
@@ -44,9 +52,22 @@ export default function ClientDetailPage() {
     }
   }, [params.id, router]);
 
+  const fetchEngagement = useCallback(async () => {
+    setEngagementLoading(true);
+    try {
+      const data = await getClientEngagementRequest(params.id);
+      setEngagement(data);
+    } catch {
+      setEngagement(null);
+    } finally {
+      setEngagementLoading(false);
+    }
+  }, [params.id]);
+
   useEffect(() => {
     fetchClient();
-  }, [fetchClient]);
+    fetchEngagement();
+  }, [fetchClient, fetchEngagement]);
 
   async function handleStatusChange(status: ClientStatus) {
     try {
@@ -55,19 +76,6 @@ export default function ClientDetailPage() {
       fetchClient();
     } catch {
       toast.error('Failed to update status');
-    }
-  }
-
-
-  async function handleSharePortalLink() {
-    try {
-      const { api } = await import('@/lib/axios');
-      const { data } = await api.get(`/clients/${params.id}/portal-link`);
-      const portalUrl = `${window.location.origin}/portal/${data.data.token}`;
-      await navigator.clipboard.writeText(portalUrl);
-      toast.success('Portal link copied to clipboard');
-    } catch {
-      toast.error('Failed to generate portal link');
     }
   }
 
@@ -141,12 +149,6 @@ export default function ClientDetailPage() {
             ))}
           </select>
           <button
-            onClick={handleSharePortalLink}
-            className="flex items-center gap-2 rounded-lg border border-neutral-200 px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50 dark:border-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-800"
-          >
-            <Share2 size={14} /> Portal Link
-          </button>
-          <button
             onClick={handleDelete}
             className="flex items-center gap-2 rounded-lg border border-neutral-200 px-3 py-2 text-sm font-medium text-red-600 hover:bg-neutral-50 dark:border-neutral-800 dark:hover:bg-neutral-800"
           >
@@ -156,8 +158,18 @@ export default function ClientDetailPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Left column: requirements + favorites/shared */}
+        {/* Left column: portal access, collections, requirements, favorites/shared */}
         <div className="space-y-6 lg:col-span-1">
+          <PortalAccessPanel
+            clientId={client.id}
+            portalToken={client.portalToken}
+            portalTokenExpiresAt={client.portalTokenExpiresAt}
+            portalTokenRevokedAt={client.portalTokenRevokedAt}
+            onChanged={fetchClient}
+          />
+
+          <CollectionManager clientId={client.id} />
+
           <div className="rounded-xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-semibold text-neutral-900 dark:text-white">Requirements</h2>
@@ -243,8 +255,10 @@ export default function ClientDetailPage() {
           </div>
         </div>
 
-        {/* Right column: notes + timeline */}
+        {/* Right column: engagement + notes + timeline */}
         <div className="space-y-6 lg:col-span-2">
+          <EngagementSummary engagement={engagement} isLoading={engagementLoading} />
+
           <div className="rounded-xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
             <h2 className="mb-3 text-sm font-semibold text-neutral-900 dark:text-white">Add a note</h2>
             <NoteForm onSubmit={handleAddNote} />
@@ -271,7 +285,7 @@ export default function ClientDetailPage() {
 
           <div className="rounded-xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
             <h2 className="mb-4 text-sm font-semibold text-neutral-900 dark:text-white">Activity Timeline</h2>
-            
+
             <TimelineFeed events={client.timeline || []} />
           </div>
         </div>

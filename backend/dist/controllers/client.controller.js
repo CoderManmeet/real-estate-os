@@ -45,6 +45,9 @@ exports.addFavorite = addFavorite;
 exports.removeFavorite = removeFavorite;
 exports.shareProperty = shareProperty;
 exports.getPortalLink = getPortalLink;
+exports.regeneratePortalToken = regeneratePortalToken;
+exports.revokePortalToken = revokePortalToken;
+exports.getEngagement = getEngagement;
 const AppError_1 = require("../utils/AppError");
 const getParam_1 = require("../utils/getParam");
 const client_validator_1 = require("../validators/client.validator");
@@ -171,6 +174,34 @@ async function getPortalLink(req, res, next) {
     try {
         const token = await (0, client_service_1.getOrCreatePortalLink)((0, getParam_1.getParam)(req, 'id'));
         res.status(200).json({ success: true, data: { token } });
+    }
+    catch (err) {
+        next(err);
+    }
+}
+async function regeneratePortalToken(req, res, next) {
+    try {
+        const input = client_validator_1.regeneratePortalSchema.parse(req.body);
+        const token = await clientService.regeneratePortalToken((0, getParam_1.getParam)(req, 'id'), input.expiresAt);
+        res.status(200).json({ success: true, data: { token } });
+    }
+    catch (err) {
+        next(err);
+    }
+}
+async function revokePortalToken(req, res, next) {
+    try {
+        await clientService.revokePortalToken((0, getParam_1.getParam)(req, 'id'));
+        res.status(200).json({ success: true, message: 'Portal link revoked' });
+    }
+    catch (err) {
+        next(err);
+    }
+}
+async function getEngagement(req, res, next) {
+    try {
+        const data = await clientService.getClientEngagement((0, getParam_1.getParam)(req, 'id'));
+        res.status(200).json({ success: true, data });
     }
     catch (err) {
         next(err);

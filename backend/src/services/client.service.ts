@@ -14,7 +14,6 @@ export async function createClient(input: CreateClientInput, userId: string) {
   const client = await prisma.client.create({
     data: { ...input, createdById: userId },
   });
-
   await prisma.clientTimeline.create({
     data: {
       clientId: client.id,
@@ -23,13 +22,11 @@ export async function createClient(input: CreateClientInput, userId: string) {
       createdById: userId,
     },
   });
-
   return client;
 }
 
 export async function listClients(query: ListClientsQuery) {
   const { page, limit, status, search } = query;
-
   const where = {
     ...(status && { status }),
     ...(search && {
@@ -40,7 +37,6 @@ export async function listClients(query: ListClientsQuery) {
       ],
     }),
   };
-
   const [clients, total] = await Promise.all([
     prisma.client.findMany({
       where,
@@ -50,7 +46,6 @@ export async function listClients(query: ListClientsQuery) {
     }),
     prisma.client.count({ where }),
   ]);
-
   return { clients, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } };
 }
 
@@ -83,7 +78,6 @@ async function assertClientExists(id: string) {
 
 export async function updateClient(id: string, input: UpdateClientInput, userId: string) {
   const existing = await assertClientExists(id);
-
   if (input.status && input.status !== existing.status) {
     await prisma.clientTimeline.create({
       data: {
@@ -94,7 +88,6 @@ export async function updateClient(id: string, input: UpdateClientInput, userId:
       },
     });
   }
-
   return prisma.client.update({ where: { id }, data: input });
 }
 
@@ -105,7 +98,14 @@ export async function deleteClient(id: string) {
 
 export async function addRequirement(clientId: string, input: CreateRequirementInput) {
   await assertClientExists(clientId);
-  return prisma.clientRequirement.create({ data: { ...input, clientId } });
+  const { possessionBy, ...rest } = input;
+  return prisma.clientRequirement.create({
+    data: {
+      ...rest,
+      clientId,
+      ...(possessionBy && { possessionBy: new Date(possessionBy) }),
+    },
+  });
 }
 
 export async function addNote(clientId: string, input: CreateNoteInput, userId: string) {
@@ -130,7 +130,6 @@ export async function addFavorite(clientId: string, propertyId: string) {
   await assertClientExists(clientId);
   const property = await prisma.property.findUnique({ where: { id: propertyId } });
   if (!property) throw new AppError('Property not found', 404);
-
   return prisma.favorite.upsert({
     where: { clientId_propertyId: { clientId, propertyId } },
     create: { clientId, propertyId },
@@ -146,11 +145,9 @@ export async function shareProperty(clientId: string, propertyId: string, userId
   await assertClientExists(clientId);
   const property = await prisma.property.findUnique({ where: { id: propertyId } });
   if (!property) throw new AppError('Property not found', 404);
-
   const shared = await prisma.sharedProperty.create({
     data: { clientId, propertyId, sharedById: userId },
   });
-
   await prisma.clientTimeline.create({
     data: {
       clientId,
@@ -159,19 +156,107 @@ export async function shareProperty(clientId: string, propertyId: string, userId
       createdById: userId,
     },
   });
-
   return shared;
 }
 
 export async function getOrCreatePortalLink(clientId: string) {
   const client = await prisma.client.findUnique({ where: { id: clientId } });
   if (!client) throw new AppError('Client not found', 404);
-
   if (client.portalToken) {
     return client.portalToken;
   }
-
   const token = crypto.randomBytes(24).toString('hex');
   await prisma.client.update({ where: { id: clientId }, data: { portalToken: token } });
   return token;
+}
+
+export async function regeneratePortalToken(clientId: string, expiresAt?: string) {
+  await assertClientExists(clientId);
+  const token = crypto.randomBytes(24).toString('hex');
+  await prisma.client.update({
+    where: { id: clientId },
+    data: {
+      portalToken: token,
+      portalTokenRevokedAt: null,
+      portalTokenExpiresAt: expiresAt ? new Date(expiresAt) : null,
+    },
+  });
+  return token;
+}
+
+export async function revokePortalToken(clientId: string) {
+  await assertClientExists(clientId);
+  await prisma.client.update({
+    where: { id: clientId },
+    data: { portalTokenRevokedAt: new Date() },
+  });
+}
+
+export async function getClientEngagement(clientId: string) {
+  await assertClientExists(clientId);
+
+  const [
+    sharedDistinct,
+    viewedDistinct,
+    favoritesCount,
+    feedbackGroups,
+    commentsCount,
+    siteVisitsTotal,
+    siteVisitsRequested,
+    portalOpens,
+    lastActivity,
+    recentActivity,
+  ] = await Promise.all([
+    prisma.sharedProperty.findMany({
+      where: { clientId },
+      select: { propertyId: true },
+      distinct: ['propertyId'],
+    }),
+    prisma.clientActivity.findMany({
+      where: { clientId, type: 'PROPERTY_VIEWED' },
+      select: { propertyId: true },
+      distinct: ['propertyId'],
+    }),
+    prisma.favorite.count({ where: { clientId } }),
+    prisma.propertyFeedback.groupBy({
+      by: ['sentiment'],
+      where: { clientId },
+      _count: { _all: true },
+    }),
+    prisma.propertyComment.count({ where: { clientId } }),
+    prisma.siteVisit.count({ where: { clientId } }),
+    prisma.siteVisit.count({ where: { clientId, status: 'REQUESTED' } }),
+    prisma.clientActivity.count({ where: { clientId, type: 'PORTAL_OPENED' } }),
+    prisma.clientActivity.findFirst({
+      where: { clientId },
+      orderBy: { createdAt: 'desc' },
+      select: { createdAt: true },
+    }),
+    prisma.clientActivity.findMany({
+      where: { clientId },
+      orderBy: { createdAt: 'desc' },
+      take: 20,
+      include: { property: { select: { id: true, title: true } } },
+    }),
+  ]);
+
+  const sentimentCount = (s: 'INTERESTED' | 'MAYBE' | 'NOT_INTERESTED') =>
+    feedbackGroups.find((g) => g.sentiment === s)?._count._all ?? 0;
+
+  return {
+    summary: {
+      propertiesShared: sharedDistinct.length,
+      propertiesViewed: viewedDistinct.length,
+      favorited: favoritesCount,
+      interested: sentimentCount('INTERESTED'),
+      maybe: sentimentCount('MAYBE'),
+      notInterested: sentimentCount('NOT_INTERESTED'),
+      comments: commentsCount,
+      siteVisitsRequested,
+      siteVisits: siteVisitsTotal,
+      portalOpens,
+      lastActivityAt: lastActivity?.createdAt ?? null,
+    },
+    recentActivity,
+  };
 }

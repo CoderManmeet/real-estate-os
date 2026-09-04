@@ -70,6 +70,7 @@ enum ActivityType {
 }
 
 enum SiteVisitStatus {
+  REQUESTED
   SCHEDULED
   CONFIRMED
   COMPLETED
@@ -100,12 +101,53 @@ enum InventoryUpdateSource {
 }
 
 
+enum FeedbackSentiment {
+  INTERESTED
+  MAYBE
+  NOT_INTERESTED
+}
+
+enum ClientActivityType {
+  PORTAL_OPENED
+  PROPERTY_VIEWED
+  PROPERTY_FAVORITED
+  PROPERTY_UNFAVORITED
+  FEEDBACK_GIVEN
+  COMMENT_ADDED
+  SITE_VISIT_REQUESTED
+  SITE_VISIT_CONFIRMED
+  CONTACT_AGENT
+  CALL_AGENT
+  WHATSAPP_AGENT
+}
+
+enum RequirementFurnishing {
+  UNFURNISHED
+  SEMI_FURNISHED
+  FURNISHED
+}
+
+enum RequirementPurpose {
+  BUY
+  RENT
+  INVESTMENT
+}
+
+enum RequirementUrgency {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+
+
 
 model User {
   id                String            @id @default(uuid())
   fullName          String
   email             String            @unique
   password          String
+  phone             String?
   role              Role              @default(AGENT)
   isActive          Boolean           @default(true)
   createdAt         DateTime          @default(now())
@@ -127,6 +169,7 @@ model User {
   notifications      Notification[]
   uploadedDocuments Document[]
   createdInvoices   Invoice[]
+  createdCollections PropertyCollection[]
 
   @@map("users")
 }
@@ -177,6 +220,9 @@ model Property {
   documents    Document[]
   invoices     Invoice[]
   nearbyPlaces PropertyNearbyPlace[]
+  feedback   PropertyFeedback[]
+  comments   PropertyComment[]
+  activities ClientActivity[]
 
   @@map("properties")
 }
@@ -223,6 +269,8 @@ model Client {
   source            String?
   status            ClientStatus        @default(NEW)
   portalToken String? @unique
+  portalTokenExpiresAt DateTime?
+  portalTokenRevokedAt DateTime?
   createdById       String
   createdBy         User                @relation(fields: [createdById], references: [id])
   createdAt         DateTime            @default(now())
@@ -235,21 +283,36 @@ model Client {
   leads             Lead[]
   siteVisits        SiteVisit[]
   invoices          Invoice[]
+  collections      PropertyCollection[]
+  activities       ClientActivity[]
+  propertyFeedback PropertyFeedback[]
+  propertyComments PropertyComment[]
 
   @@map("clients")
 }
 
 model ClientRequirement {
-  id            String       @id @default(uuid())
-  clientId      String
-  client        Client       @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  propertyType  PropertyType
-  preferredCity String
-  minBudget     Float?
-  maxBudget     Float?
-  bedrooms      Int?
-  notes         String?
-  createdAt     DateTime     @default(now())
+  id                 String                 @id @default(uuid())
+  clientId           String
+  client             Client                 @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  propertyType       PropertyType
+  preferredCity      String
+  minBudget          Float?
+  maxBudget          Float?
+  bedrooms           Int?
+  minArea            Float?
+  maxArea            Float?
+  furnishing         RequirementFurnishing?
+  parking            Boolean?
+  facing             String?
+  floorPreference    String?
+  possessionBy       DateTime?
+  purpose            RequirementPurpose?
+  financing          String?
+  urgency            RequirementUrgency?
+  preferredLocations String[]               @default([])
+  notes              String?
+  createdAt          DateTime               @default(now())
 
   @@map("client_requirements")
 }
@@ -292,14 +355,17 @@ model Favorite {
 }
 
 model SharedProperty {
-  id          String   @id @default(uuid())
-  clientId    String
-  client      Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  propertyId  String
-  property    Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  sharedById  String
-  sharedBy    User     @relation(fields: [sharedById], references: [id])
-  sharedAt    DateTime @default(now())
+  id           String              @id @default(uuid())
+  clientId     String
+  client       Client              @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  propertyId   String
+  property     Property            @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  sharedById   String
+  sharedBy     User                @relation(fields: [sharedById], references: [id])
+  collectionId String?
+  collection   PropertyCollection? @relation(fields: [collectionId], references: [id], onDelete: SetNull)
+  position     Int?
+  sharedAt     DateTime            @default(now())
 
   @@map("shared_properties")
 }
@@ -475,4 +541,73 @@ model PropertyAiSummary {
   updatedAt        DateTime @updatedAt
 
   @@map("property_ai_summaries")
+}
+
+model PropertyCollection {
+  id          String    @id @default(uuid())
+  clientId    String
+  client      Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  accessToken String    @unique
+  expiresAt   DateTime?
+  revokedAt   DateTime?
+  isArchived  Boolean   @default(false)
+  createdById String
+  createdBy   User      @relation(fields: [createdById], references: [id])
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  sharedProperties SharedProperty[]
+  activities       ClientActivity[]
+  feedback         PropertyFeedback[]
+  comments         PropertyComment[]
+
+  @@map("property_collections")
+}
+
+model PropertyFeedback {
+  id           String              @id @default(uuid())
+  clientId     String
+  client       Client              @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  propertyId   String
+  property     Property            @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  collectionId String?
+  collection   PropertyCollection? @relation(fields: [collectionId], references: [id], onDelete: SetNull)
+  sentiment    FeedbackSentiment
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+
+  @@unique([clientId, propertyId])
+  @@map("property_feedback")
+}
+
+model PropertyComment {
+  id           String              @id @default(uuid())
+  clientId     String
+  client       Client              @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  propertyId   String?
+  property     Property?           @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  collectionId String?
+  collection   PropertyCollection? @relation(fields: [collectionId], references: [id], onDelete: SetNull)
+  body         String
+  createdAt    DateTime            @default(now())
+
+  @@map("property_comments")
+}
+
+model ClientActivity {
+  id           String              @id @default(uuid())
+  clientId     String
+  client       Client              @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  collectionId String?
+  collection   PropertyCollection? @relation(fields: [collectionId], references: [id], onDelete: SetNull)
+  propertyId   String?
+  property     Property?           @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+  type         ClientActivityType
+  metadata     Json?
+  createdAt    DateTime            @default(now())
+
+  @@index([clientId, createdAt])
+  @@map("client_activities")
 }

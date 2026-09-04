@@ -1,13 +1,26 @@
 import { Request, Response, NextFunction } from 'express';
-import { z } from 'zod';
 import { getParam } from '../utils/getParam';
+import {
+  propertyRefSchema,
+  feedbackSchema,
+  commentSchema,
+  trackSchema,
+  visitRequestSchema,
+} from '../validators/portal.validator';
 import * as portalService from '../services/portal.service';
-
-const propertyRefSchema = z.object({ propertyId: z.string().uuid() });
 
 export async function getPortal(req: Request, res: Response, next: NextFunction) {
   try {
     const data = await portalService.getPortalData(getParam(req, 'token'));
+    res.status(200).json({ success: true, data });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function getCollection(req: Request, res: Response, next: NextFunction) {
+  try {
+    const data = await portalService.getCollectionData(getParam(req, 'token'));
     res.status(200).json({ success: true, data });
   } catch (err) {
     next(err);
@@ -28,6 +41,46 @@ export async function removeFavorite(req: Request, res: Response, next: NextFunc
   try {
     await portalService.removePortalFavorite(getParam(req, 'token'), getParam(req, 'propertyId'));
     res.status(200).json({ success: true, message: 'Removed from favorites' });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function setFeedback(req: Request, res: Response, next: NextFunction) {
+  try {
+    const input = feedbackSchema.parse(req.body);
+    const data = await portalService.setPortalFeedback(getParam(req, 'token'), input);
+    res.status(200).json({ success: true, data });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function addComment(req: Request, res: Response, next: NextFunction) {
+  try {
+    const input = commentSchema.parse(req.body);
+    const data = await portalService.addPortalComment(getParam(req, 'token'), input);
+    res.status(201).json({ success: true, data });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function track(req: Request, res: Response, next: NextFunction) {
+  try {
+    const input = trackSchema.parse(req.body);
+    const data = await portalService.trackPortalEvent(getParam(req, 'token'), input);
+    res.status(201).json({ success: true, data });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function requestVisit(req: Request, res: Response, next: NextFunction) {
+  try {
+    const input = visitRequestSchema.parse(req.body);
+    const data = await portalService.requestSiteVisit(getParam(req, 'token'), input);
+    res.status(201).json({ success: true, data });
   } catch (err) {
     next(err);
   }

@@ -43,6 +43,9 @@ export interface Client {
   email?: string | null;
   source?: string | null;
   status: ClientStatus;
+  portalToken?: string | null;
+  portalTokenExpiresAt?: string | null;
+  portalTokenRevokedAt?: string | null;
   createdAt: string;
   updatedAt: string;
   requirements?: ClientRequirement[];

@@ -34,13 +34,17 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getPortal = getPortal;
+exports.getCollection = getCollection;
 exports.addFavorite = addFavorite;
 exports.removeFavorite = removeFavorite;
+exports.setFeedback = setFeedback;
+exports.addComment = addComment;
+exports.track = track;
+exports.requestVisit = requestVisit;
 exports.confirmVisit = confirmVisit;
-const zod_1 = require("zod");
 const getParam_1 = require("../utils/getParam");
+const portal_validator_1 = require("../validators/portal.validator");
 const portalService = __importStar(require("../services/portal.service"));
-const propertyRefSchema = zod_1.z.object({ propertyId: zod_1.z.string().uuid() });
 async function getPortal(req, res, next) {
     try {
         const data = await portalService.getPortalData((0, getParam_1.getParam)(req, 'token'));
@@ -50,9 +54,18 @@ async function getPortal(req, res, next) {
         next(err);
     }
 }
+async function getCollection(req, res, next) {
+    try {
+        const data = await portalService.getCollectionData((0, getParam_1.getParam)(req, 'token'));
+        res.status(200).json({ success: true, data });
+    }
+    catch (err) {
+        next(err);
+    }
+}
 async function addFavorite(req, res, next) {
     try {
-        const { propertyId } = propertyRefSchema.parse(req.body);
+        const { propertyId } = portal_validator_1.propertyRefSchema.parse(req.body);
         const favorite = await portalService.addPortalFavorite((0, getParam_1.getParam)(req, 'token'), propertyId);
         res.status(201).json({ success: true, data: favorite });
     }
@@ -64,6 +77,46 @@ async function removeFavorite(req, res, next) {
     try {
         await portalService.removePortalFavorite((0, getParam_1.getParam)(req, 'token'), (0, getParam_1.getParam)(req, 'propertyId'));
         res.status(200).json({ success: true, message: 'Removed from favorites' });
+    }
+    catch (err) {
+        next(err);
+    }
+}
+async function setFeedback(req, res, next) {
+    try {
+        const input = portal_validator_1.feedbackSchema.parse(req.body);
+        const data = await portalService.setPortalFeedback((0, getParam_1.getParam)(req, 'token'), input);
+        res.status(200).json({ success: true, data });
+    }
+    catch (err) {
+        next(err);
+    }
+}
+async function addComment(req, res, next) {
+    try {
+        const input = portal_validator_1.commentSchema.parse(req.body);
+        const data = await portalService.addPortalComment((0, getParam_1.getParam)(req, 'token'), input);
+        res.status(201).json({ success: true, data });
+    }
+    catch (err) {
+        next(err);
+    }
+}
+async function track(req, res, next) {
+    try {
+        const input = portal_validator_1.trackSchema.parse(req.body);
+        const data = await portalService.trackPortalEvent((0, getParam_1.getParam)(req, 'token'), input);
+        res.status(201).json({ success: true, data });
+    }
+    catch (err) {
+        next(err);
+    }
+}
+async function requestVisit(req, res, next) {
+    try {
+        const input = portal_validator_1.visitRequestSchema.parse(req.body);
+        const data = await portalService.requestSiteVisit((0, getParam_1.getParam)(req, 'token'), input);
+        res.status(201).json({ success: true, data });
     }
     catch (err) {
         next(err);

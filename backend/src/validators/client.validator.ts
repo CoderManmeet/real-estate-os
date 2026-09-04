@@ -27,6 +27,17 @@ export const createRequirementSchema = z.object({
   minBudget: z.number().nonnegative().optional(),
   maxBudget: z.number().positive().optional(),
   bedrooms: z.number().int().nonnegative().optional(),
+  minArea: z.number().nonnegative().optional(),
+  maxArea: z.number().positive().optional(),
+  furnishing: z.enum(['UNFURNISHED', 'SEMI_FURNISHED', 'FURNISHED']).optional(),
+  parking: z.boolean().optional(),
+  facing: z.string().optional(),
+  floorPreference: z.string().optional(),
+  possessionBy: z.string().datetime().optional(),
+  purpose: z.enum(['BUY', 'RENT', 'INVESTMENT']).optional(),
+  financing: z.string().optional(),
+  urgency: z.enum(['LOW', 'MEDIUM', 'HIGH']).optional(),
+  preferredLocations: z.array(z.string()).default([]),
   notes: z.string().optional(),
 });
 
@@ -43,9 +54,14 @@ export const propertyRefSchema = z.object({
   propertyId: z.string().uuid('Invalid property id'),
 });
 
+export const regeneratePortalSchema = z.object({
+  expiresAt: z.string().datetime().optional(),
+});
+
 export type CreateClientInput = z.infer<typeof createClientSchema>;
 export type UpdateClientInput = z.infer<typeof updateClientSchema>;
 export type ListClientsQuery = z.infer<typeof listClientsQuerySchema>;
 export type CreateRequirementInput = z.infer<typeof createRequirementSchema>;
 export type CreateNoteInput = z.infer<typeof createNoteSchema>;
 export type CreateTimelineEventInput = z.infer<typeof createTimelineEventSchema>;
+export type RegeneratePortalInput = z.infer<typeof regeneratePortalSchema>;

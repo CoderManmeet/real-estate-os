@@ -6,6 +6,7 @@ import {
   ClientFormValues,
   RequirementFormValues,
 } from '@/types/client';
+import { ClientEngagement } from '@/types/engagement';
 
 export async function listClientsRequest(filters: ClientFilters): Promise<ClientListResponse> {
   const { data } = await api.get('/clients', { params: filters });
@@ -49,5 +50,22 @@ export async function addTimelineEventRequest(
   payload: { eventType: string; description: string }
 ) {
   const { data } = await api.post(`/clients/${clientId}/timeline`, payload);
+  return data.data;
+}
+
+export async function regeneratePortalTokenRequest(
+  clientId: string,
+  expiresAt?: string
+): Promise<{ token: string }> {
+  const { data } = await api.post(`/clients/${clientId}/portal-token/regenerate`, { expiresAt });
+  return data.data;
+}
+
+export async function revokePortalTokenRequest(clientId: string): Promise<void> {
+  await api.post(`/clients/${clientId}/portal-token/revoke`);
+}
+
+export async function getClientEngagementRequest(clientId: string): Promise<ClientEngagement> {
+  const { data } = await api.get(`/clients/${clientId}/engagement`);
   return data.data;
 }
