@@ -1,6 +1,12 @@
 import { prisma } from '../config/prisma';
 import { AppError } from '../utils/AppError';
 import {
+  LEAD_STAGES,
+  displayStage,
+  resolveClientStatusFromStages,
+  StoredLeadStage,
+} from '../utils/pipeline';
+import {
   CreateLeadSourceInput,
   CreateLeadInput,
   UpdateLeadInput,
@@ -49,6 +55,37 @@ async function assertReferencesExist(input: {
   }
 }
 
+/**
+ * Recompute a client's derived status from ALL of its leads and, if it changed,
+ * persist it and log a STATUS_CHANGE timeline event. One-directional: Lead.stage ->
+ * Client.status only. Safe to call after any create/update/delete of a lead.
+ */
+export async function syncClientStatusFromLeads(clientId: string, actorUserId: string) {
+  const [client, leads] = await Promise.all([
+    prisma.client.findUnique({ where: { id: clientId }, select: { id: true, status: true } }),
+    prisma.lead.findMany({ where: { clientId }, select: { stage: true } }),
+  ]);
+  // Client may have been removed (e.g. cascade); nothing to sync.
+  if (!client) return;
+
+  const target = resolveClientStatusFromStages(
+    leads.map((l) => l.stage as StoredLeadStage)
+  );
+  if (!target || target === client.status) return;
+
+  await prisma.$transaction([
+    prisma.client.update({ where: { id: clientId }, data: { status: target } }),
+    prisma.clientTimeline.create({
+      data: {
+        clientId,
+        eventType: 'STATUS_CHANGE',
+        description: `Status updated to ${target} (derived from lead pipeline)`,
+        createdById: actorUserId,
+      },
+    }),
+  ]);
+}
+
 export async function createLead(input: CreateLeadInput, userId: string) {
   await assertReferencesExist(input);
 
@@ -65,6 +102,8 @@ export async function createLead(input: CreateLeadInput, userId: string) {
       createdById: userId,
     },
   });
+
+  await syncClientStatusFromLeads(lead.clientId, userId);
 
   return lead;
 }
@@ -92,16 +131,18 @@ export async function listLeads(query: ListLeadsQuery) {
 }
 
 export async function getLeadBoard() {
-  const stages = ['NEW', 'CONTACTED', 'QUALIFIED', 'NEGOTIATION', 'WON', 'LOST'] as const;
-
   const leads = await prisma.lead.findMany({
     orderBy: { updatedAt: 'desc' },
     include: leadInclude,
   });
 
+  // Always return every canonical stage bucket (even when empty) so the board has
+  // no gaps. Residual dormant-WON rows are folded into CLOSED via displayStage.
   const board: Record<string, typeof leads> = {};
-  for (const stage of stages) {
-    board[stage] = leads.filter((lead) => lead.stage === stage);
+  for (const stage of LEAD_STAGES) board[stage] = [];
+  for (const lead of leads) {
+    const bucket = displayStage(lead.stage as StoredLeadStage);
+    board[bucket].push(lead);
   }
   return board;
 }
@@ -135,7 +176,9 @@ export async function updateLead(id: string, input: UpdateLeadInput, userId: str
   const existing = await assertLeadExists(id);
   await assertReferencesExist(input);
 
-  if (input.stage && input.stage !== existing.stage) {
+  const stageChanged = !!input.stage && input.stage !== existing.stage;
+
+  if (stageChanged) {
     await prisma.leadActivity.create({
       data: {
         leadId: id,
@@ -146,12 +189,24 @@ export async function updateLead(id: string, input: UpdateLeadInput, userId: str
     });
   }
 
-  return prisma.lead.update({ where: { id }, data: input, include: leadInclude });
+  const updated = await prisma.lead.update({
+    where: { id },
+    data: input,
+    include: leadInclude,
+  });
+
+  if (stageChanged) {
+    await syncClientStatusFromLeads(existing.clientId, userId);
+  }
+
+  return updated;
 }
 
-export async function deleteLead(id: string) {
-  await assertLeadExists(id);
+export async function deleteLead(id: string, userId: string) {
+  const existing = await assertLeadExists(id);
   await prisma.lead.delete({ where: { id } });
+  // Removing a lead can change the furthest-progress lead, so re-derive status.
+  await syncClientStatusFromLeads(existing.clientId, userId);
 }
 
 export async function addActivity(leadId: string, input: CreateActivityInput, userId: string) {

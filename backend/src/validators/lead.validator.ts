@@ -1,5 +1,21 @@
 import { z } from 'zod';
 
+// V2.1 canonical stages. WON is deliberately omitted from accepted INPUT (dormant):
+// new writes never produce WON. Existing WON rows still read fine and are folded to
+// CLOSED for display/analytics until the backfill migration runs.
+const leadStageEnum = z.enum([
+  'NEW',
+  'CONTACTED',
+  'QUALIFIED',
+  'PROPERTIES_SHARED',
+  'INTERESTED',
+  'SITE_VISIT',
+  'NEGOTIATION',
+  'BOOKING',
+  'CLOSED',
+  'LOST',
+]);
+
 export const createLeadSourceSchema = z.object({
   name: z.string().min(2, 'Source name is required'),
 });
@@ -9,20 +25,20 @@ export const createLeadSchema = z.object({
   propertyId: z.string().uuid('Invalid property id').optional(),
   leadSourceId: z.string().uuid('Invalid lead source id').optional(),
   assignedToId: z.string().uuid('Invalid user id'),
-  stage: z.enum(['NEW', 'CONTACTED', 'QUALIFIED', 'NEGOTIATION', 'WON', 'LOST']).optional(),
+  stage: leadStageEnum.optional(),
 });
 
 export const updateLeadSchema = z.object({
   propertyId: z.string().uuid().optional(),
   leadSourceId: z.string().uuid().optional(),
   assignedToId: z.string().uuid().optional(),
-  stage: z.enum(['NEW', 'CONTACTED', 'QUALIFIED', 'NEGOTIATION', 'WON', 'LOST']).optional(),
+  stage: leadStageEnum.optional(),
 });
 
 export const listLeadsQuerySchema = z.object({
   page: z.coerce.number().int().positive().default(1),
   limit: z.coerce.number().int().positive().max(100).default(20),
-  stage: z.enum(['NEW', 'CONTACTED', 'QUALIFIED', 'NEGOTIATION', 'WON', 'LOST']).optional(),
+  stage: leadStageEnum.optional(),
   assignedToId: z.string().uuid().optional(),
 });
 

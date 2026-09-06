@@ -7,13 +7,19 @@ exports.getRevenueByMonth = getRevenueByMonth;
 exports.getBuilderPerformance = getBuilderPerformance;
 exports.getConversionRate = getConversionRate;
 const prisma_1 = require("../config/prisma");
+const pipeline_1 = require("../utils/pipeline");
+// Terminal stages excluded from "active leads". WON is included defensively so the
+// count is correct whether or not the WON->CLOSED backfill has been applied yet.
+const TERMINAL_STAGES = ['CLOSED', 'WON', 'LOST'];
+// Win stages for conversion. Counts CLOSED and any residual WON (== CLOSED post-backfill).
+const WIN_STAGES = ['CLOSED', 'WON'];
 async function getOverview() {
     const [totalProperties, totalClients, totalLeads, totalSiteVisits, activeLeads, totalRevenue] = await Promise.all([
         prisma_1.prisma.property.count(),
         prisma_1.prisma.client.count(),
         prisma_1.prisma.lead.count(),
         prisma_1.prisma.siteVisit.count(),
-        prisma_1.prisma.lead.count({ where: { stage: { notIn: ['WON', 'LOST'] } } }),
+        prisma_1.prisma.lead.count({ where: { stage: { notIn: [...TERMINAL_STAGES] } } }),
         prisma_1.prisma.invoice.aggregate({
             where: { status: 'PAID' },
             _sum: { amount: true },
@@ -40,10 +46,14 @@ async function getLeadFunnel() {
         by: ['stage'],
         _count: { _all: true },
     });
-    // ensure all stages appear even with zero leads, so the chart doesn't have gaps
-    const stages = ['NEW', 'CONTACTED', 'QUALIFIED', 'NEGOTIATION', 'WON', 'LOST'];
-    const map = new Map(grouped.map((g) => [g.stage, g._count._all]));
-    return stages.map((stage) => ({ stage, count: map.get(stage) || 0 }));
+    // Fold counts into canonical buckets (dormant WON -> CLOSED) so no leads are lost
+    // from the chart before the backfill runs; emit all 10 stages so there are no gaps.
+    const counts = new Map();
+    for (const g of grouped) {
+        const bucket = (0, pipeline_1.displayStage)(g.stage);
+        counts.set(bucket, (counts.get(bucket) || 0) + g._count._all);
+    }
+    return pipeline_1.LEAD_STAGES.map((stage) => ({ stage, count: counts.get(stage) || 0 }));
 }
 async function getRevenueByMonth() {
     const invoices = await prisma_1.prisma.invoice.findMany({
@@ -72,7 +82,7 @@ async function getBuilderPerformance() {
 async function getConversionRate() {
     const [totalLeads, wonLeads] = await Promise.all([
         prisma_1.prisma.lead.count(),
-        prisma_1.prisma.lead.count({ where: { stage: 'WON' } }),
+        prisma_1.prisma.lead.count({ where: { stage: { in: [...WIN_STAGES] } } }),
     ]);
     return {
         totalLeads,

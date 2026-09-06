@@ -1,4 +1,11 @@
 import { prisma } from '../config/prisma';
+import { LEAD_STAGES, displayStage, StoredLeadStage } from '../utils/pipeline';
+
+// Terminal stages excluded from "active leads". WON is included defensively so the
+// count is correct whether or not the WON->CLOSED backfill has been applied yet.
+const TERMINAL_STAGES = ['CLOSED', 'WON', 'LOST'] as const;
+// Win stages for conversion. Counts CLOSED and any residual WON (== CLOSED post-backfill).
+const WIN_STAGES = ['CLOSED', 'WON'] as const;
 
 export async function getOverview() {
   const [totalProperties, totalClients, totalLeads, totalSiteVisits, activeLeads, totalRevenue] =
@@ -7,7 +14,7 @@ export async function getOverview() {
       prisma.client.count(),
       prisma.lead.count(),
       prisma.siteVisit.count(),
-      prisma.lead.count({ where: { stage: { notIn: ['WON', 'LOST'] } } }),
+      prisma.lead.count({ where: { stage: { notIn: [...TERMINAL_STAGES] } } }),
       prisma.invoice.aggregate({
         where: { status: 'PAID' },
         _sum: { amount: true },
@@ -39,11 +46,15 @@ export async function getLeadFunnel() {
     _count: { _all: true },
   });
 
-  // ensure all stages appear even with zero leads, so the chart doesn't have gaps
-  const stages = ['NEW', 'CONTACTED', 'QUALIFIED', 'NEGOTIATION', 'WON', 'LOST'];
-  const map = new Map(grouped.map((g) => [g.stage, g._count._all]));
+  // Fold counts into canonical buckets (dormant WON -> CLOSED) so no leads are lost
+  // from the chart before the backfill runs; emit all 10 stages so there are no gaps.
+  const counts = new Map<string, number>();
+  for (const g of grouped) {
+    const bucket = displayStage(g.stage as StoredLeadStage);
+    counts.set(bucket, (counts.get(bucket) || 0) + g._count._all);
+  }
 
-  return stages.map((stage) => ({ stage, count: map.get(stage as any) || 0 }));
+  return LEAD_STAGES.map((stage) => ({ stage, count: counts.get(stage) || 0 }));
 }
 
 export async function getRevenueByMonth() {
@@ -78,7 +89,7 @@ export async function getBuilderPerformance() {
 export async function getConversionRate() {
   const [totalLeads, wonLeads] = await Promise.all([
     prisma.lead.count(),
-    prisma.lead.count({ where: { stage: 'WON' } }),
+    prisma.lead.count({ where: { stage: { in: [...WIN_STAGES] } } }),
   ]);
 
   return {

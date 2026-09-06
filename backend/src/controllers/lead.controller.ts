@@ -89,7 +89,8 @@ export async function update(req: AuthRequest, res: Response, next: NextFunction
 
 export async function remove(req: AuthRequest, res: Response, next: NextFunction) {
   try {
-    await leadService.deleteLead(getParam(req, 'id'));
+    const user = requireUser(req);
+    await leadService.deleteLead(getParam(req, 'id'), user.userId);
     res.status(200).json({ success: true, message: 'Lead deleted' });
   } catch (err) {
     next(err);

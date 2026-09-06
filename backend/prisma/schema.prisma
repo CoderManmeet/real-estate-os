@@ -59,6 +59,11 @@ enum LeadStage {
   NEGOTIATION
   WON
   LOST
+  PROPERTIES_SHARED
+  INTERESTED
+  SITE_VISIT
+  BOOKING
+  CLOSED
 }
 
 enum ActivityType {

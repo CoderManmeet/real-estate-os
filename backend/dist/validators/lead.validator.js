@@ -2,6 +2,21 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.updateTaskSchema = exports.createTaskSchema = exports.createActivitySchema = exports.listLeadsQuerySchema = exports.updateLeadSchema = exports.createLeadSchema = exports.createLeadSourceSchema = void 0;
 const zod_1 = require("zod");
+// V2.1 canonical stages. WON is deliberately omitted from accepted INPUT (dormant):
+// new writes never produce WON. Existing WON rows still read fine and are folded to
+// CLOSED for display/analytics until the backfill migration runs.
+const leadStageEnum = zod_1.z.enum([
+    'NEW',
+    'CONTACTED',
+    'QUALIFIED',
+    'PROPERTIES_SHARED',
+    'INTERESTED',
+    'SITE_VISIT',
+    'NEGOTIATION',
+    'BOOKING',
+    'CLOSED',
+    'LOST',
+]);
 exports.createLeadSourceSchema = zod_1.z.object({
     name: zod_1.z.string().min(2, 'Source name is required'),
 });
@@ -10,18 +25,18 @@ exports.createLeadSchema = zod_1.z.object({
     propertyId: zod_1.z.string().uuid('Invalid property id').optional(),
     leadSourceId: zod_1.z.string().uuid('Invalid lead source id').optional(),
     assignedToId: zod_1.z.string().uuid('Invalid user id'),
-    stage: zod_1.z.enum(['NEW', 'CONTACTED', 'QUALIFIED', 'NEGOTIATION', 'WON', 'LOST']).optional(),
+    stage: leadStageEnum.optional(),
 });
 exports.updateLeadSchema = zod_1.z.object({
     propertyId: zod_1.z.string().uuid().optional(),
     leadSourceId: zod_1.z.string().uuid().optional(),
     assignedToId: zod_1.z.string().uuid().optional(),
-    stage: zod_1.z.enum(['NEW', 'CONTACTED', 'QUALIFIED', 'NEGOTIATION', 'WON', 'LOST']).optional(),
+    stage: leadStageEnum.optional(),
 });
 exports.listLeadsQuerySchema = zod_1.z.object({
     page: zod_1.z.coerce.number().int().positive().default(1),
     limit: zod_1.z.coerce.number().int().positive().max(100).default(20),
-    stage: zod_1.z.enum(['NEW', 'CONTACTED', 'QUALIFIED', 'NEGOTIATION', 'WON', 'LOST']).optional(),
+    stage: leadStageEnum.optional(),
     assignedToId: zod_1.z.string().uuid().optional(),
 });
 exports.createActivitySchema = zod_1.z.object({

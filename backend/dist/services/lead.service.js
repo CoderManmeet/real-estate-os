@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.createLeadSource = createLeadSource;
 exports.listLeadSources = listLeadSources;
+exports.syncClientStatusFromLeads = syncClientStatusFromLeads;
 exports.createLead = createLead;
 exports.listLeads = listLeads;
 exports.getLeadBoard = getLeadBoard;
@@ -14,6 +15,7 @@ exports.updateTask = updateTask;
 exports.deleteTask = deleteTask;
 const prisma_1 = require("../config/prisma");
 const AppError_1 = require("../utils/AppError");
+const pipeline_1 = require("../utils/pipeline");
 const leadInclude = {
     client: { select: { id: true, fullName: true, phone: true } },
     property: { select: { id: true, title: true, price: true } },
@@ -48,6 +50,34 @@ async function assertReferencesExist(input) {
             throw new AppError_1.AppError('Assigned user not found', 404);
     }
 }
+/**
+ * Recompute a client's derived status from ALL of its leads and, if it changed,
+ * persist it and log a STATUS_CHANGE timeline event. One-directional: Lead.stage ->
+ * Client.status only. Safe to call after any create/update/delete of a lead.
+ */
+async function syncClientStatusFromLeads(clientId, actorUserId) {
+    const [client, leads] = await Promise.all([
+        prisma_1.prisma.client.findUnique({ where: { id: clientId }, select: { id: true, status: true } }),
+        prisma_1.prisma.lead.findMany({ where: { clientId }, select: { stage: true } }),
+    ]);
+    // Client may have been removed (e.g. cascade); nothing to sync.
+    if (!client)
+        return;
+    const target = (0, pipeline_1.resolveClientStatusFromStages)(leads.map((l) => l.stage));
+    if (!target || target === client.status)
+        return;
+    await prisma_1.prisma.$transaction([
+        prisma_1.prisma.client.update({ where: { id: clientId }, data: { status: target } }),
+        prisma_1.prisma.clientTimeline.create({
+            data: {
+                clientId,
+                eventType: 'STATUS_CHANGE',
+                description: `Status updated to ${target} (derived from lead pipeline)`,
+                createdById: actorUserId,
+            },
+        }),
+    ]);
+}
 async function createLead(input, userId) {
     await assertReferencesExist(input);
     const lead = await prisma_1.prisma.lead.create({
@@ -62,6 +92,7 @@ async function createLead(input, userId) {
             createdById: userId,
         },
     });
+    await syncClientStatusFromLeads(lead.clientId, userId);
     return lead;
 }
 async function listLeads(query) {
@@ -83,14 +114,18 @@ async function listLeads(query) {
     return { leads, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } };
 }
 async function getLeadBoard() {
-    const stages = ['NEW', 'CONTACTED', 'QUALIFIED', 'NEGOTIATION', 'WON', 'LOST'];
     const leads = await prisma_1.prisma.lead.findMany({
         orderBy: { updatedAt: 'desc' },
         include: leadInclude,
     });
+    // Always return every canonical stage bucket (even when empty) so the board has
+    // no gaps. Residual dormant-WON rows are folded into CLOSED via displayStage.
     const board = {};
-    for (const stage of stages) {
-        board[stage] = leads.filter((lead) => lead.stage === stage);
+    for (const stage of pipeline_1.LEAD_STAGES)
+        board[stage] = [];
+    for (const lead of leads) {
+        const bucket = (0, pipeline_1.displayStage)(lead.stage);
+        board[bucket].push(lead);
     }
     return board;
 }
@@ -122,7 +157,8 @@ async function assertLeadExists(id) {
 async function updateLead(id, input, userId) {
     const existing = await assertLeadExists(id);
     await assertReferencesExist(input);
-    if (input.stage && input.stage !== existing.stage) {
+    const stageChanged = !!input.stage && input.stage !== existing.stage;
+    if (stageChanged) {
         await prisma_1.prisma.leadActivity.create({
             data: {
                 leadId: id,
@@ -132,11 +168,21 @@ async function updateLead(id, input, userId) {
             },
         });
     }
-    return prisma_1.prisma.lead.update({ where: { id }, data: input, include: leadInclude });
+    const updated = await prisma_1.prisma.lead.update({
+        where: { id },
+        data: input,
+        include: leadInclude,
+    });
+    if (stageChanged) {
+        await syncClientStatusFromLeads(existing.clientId, userId);
+    }
+    return updated;
 }
-async function deleteLead(id) {
-    await assertLeadExists(id);
+async function deleteLead(id, userId) {
+    const existing = await assertLeadExists(id);
     await prisma_1.prisma.lead.delete({ where: { id } });
+    // Removing a lead can change the furthest-progress lead, so re-derive status.
+    await syncClientStatusFromLeads(existing.clientId, userId);
 }
 async function addActivity(leadId, input, userId) {
     await assertLeadExists(leadId);

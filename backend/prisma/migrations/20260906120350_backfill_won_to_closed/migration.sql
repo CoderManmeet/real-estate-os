@@ -1,0 +1,1 @@
+UPDATE "leads" SET "stage" = 'CLOSED' WHERE "stage" = 'WON';

@@ -125,7 +125,8 @@ async function update(req, res, next) {
 }
 async function remove(req, res, next) {
     try {
-        await leadService.deleteLead((0, getParam_1.getParam)(req, 'id'));
+        const user = requireUser(req);
+        await leadService.deleteLead((0, getParam_1.getParam)(req, 'id'), user.userId);
         res.status(200).json({ success: true, message: 'Lead deleted' });
     }
     catch (err) {
