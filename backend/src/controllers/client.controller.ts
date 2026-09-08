@@ -11,6 +11,7 @@ import {
   createTimelineEventSchema,
   propertyRefSchema,
   regeneratePortalSchema,
+  timelineQuerySchema,
 } from '../validators/client.validator';
 import * as clientService from '../services/client.service';
 import { getOrCreatePortalLink } from '../services/client.service';
@@ -163,6 +164,17 @@ export async function revokePortalToken(req: AuthRequest, res: Response, next: N
 export async function getEngagement(req: AuthRequest, res: Response, next: NextFunction) {
   try {
     const data = await clientService.getClientEngagement(getParam(req, 'id'));
+    res.status(200).json({ success: true, data });
+  } catch (err) {
+    next(err);
+  }
+}
+
+
+export async function getTimeline(req: AuthRequest, res: Response, next: NextFunction) {
+  try {
+    const query = timelineQuerySchema.parse(req.query);
+    const data = await clientService.getClientTimeline(getParam(req, 'id'), query);
     res.status(200).json({ success: true, data });
   } catch (err) {
     next(err);

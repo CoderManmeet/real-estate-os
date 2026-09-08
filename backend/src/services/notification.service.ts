@@ -1,8 +1,15 @@
 import { prisma } from '../config/prisma';
 import { AppError } from '../utils/AppError';
 
-export async function createNotification(userId: string, title: string, message: string) {
-  return prisma.notification.create({ data: { userId, title, message } });
+export async function createNotification(
+  userId: string,
+  title: string,
+  message: string,
+  options?: { link?: string; type?: string }
+) {
+  return prisma.notification.create({
+    data: { userId, title, message, link: options?.link, type: options?.type },
+  });
 }
 
 export async function listNotifications(userId: string) {

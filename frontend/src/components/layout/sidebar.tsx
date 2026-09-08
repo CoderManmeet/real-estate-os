@@ -9,6 +9,8 @@ import {
   Users,
   Handshake,
   CalendarCheck,
+  ListChecks,
+  CalendarRange,
   Settings,
   Building,
   Receipt,
@@ -56,7 +58,11 @@ const navGroups: NavGroup[] = [
     items: [
       { label: 'Clients', href: '/dashboard/clients', icon: Users },
       { label: 'Leads', href: '/dashboard/leads', icon: Handshake },
+            // { label: 'Leads', href: '/dashboard/leads', icon: Handshake },
+      { label: 'Follow-ups', href: '/dashboard/follow-ups', icon: ListChecks },
+
       { label: 'Site Visits', href: '/dashboard/site-visits', icon: CalendarCheck },
+       { label: 'Calendar', href: '/dashboard/calendar', icon: CalendarRange },
       { label: 'Invoices', href: '/dashboard/invoices', icon: Receipt },
     ],
   },

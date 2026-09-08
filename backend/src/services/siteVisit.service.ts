@@ -53,8 +53,9 @@ export async function createSiteVisit(input: CreateSiteVisitInput, userId: strin
       'New site visit assigned',
       `You have a site visit for "${property?.title}" scheduled on ${new Date(
         siteVisit.scheduledAt
-      ).toLocaleString('en-IN')}.`
-    );
+              ).toLocaleString('en-IN')}.`,
+        { link: `/dashboard/site-visits/${siteVisit.id}`, type: 'SITE_VISIT' }
+      );
   }
 
   return siteVisit;
@@ -122,8 +123,9 @@ export async function updateSiteVisit(id: string, input: UpdateSiteVisitInput, u
       await createNotification(
         notifyUserId,
         'Site visit status updated',
-        `Status changed from ${existing.status} to ${input.status} for "${updated.property.title}".`
-      );
+                  `Status changed from ${existing.status} to ${input.status} for "${updated.property.title}".`,
+          { link: `/dashboard/site-visits/${updated.id}`, type: 'SITE_VISIT' }
+        );
     }
   }
 

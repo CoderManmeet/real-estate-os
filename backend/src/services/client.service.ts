@@ -7,6 +7,7 @@ import {
   CreateRequirementInput,
   CreateNoteInput,
   CreateTimelineEventInput,
+  TimelineQuery,
 } from '../validators/client.validator';
 import crypto from 'crypto';
 
@@ -258,5 +259,185 @@ export async function getClientEngagement(clientId: string) {
       lastActivityAt: lastActivity?.createdAt ?? null,
     },
     recentActivity,
+  };
+}
+
+
+/**
+ * Unified activity timeline (READ-MODEL MERGE — V2.1).
+ *
+ * Merges five independent write-stores for a client into one normalized, time-sorted
+ * feed WITHOUT physically consolidating any table:
+ *   - ClientTimeline    (agent-authored CRM events; has a User author)
+ *   - LeadActivity      (per-lead events across all of the client's leads; User author)
+ *   - ClientActivity    (portal telemetry; client-authored, NO User author -> actor null)
+ *   - SiteVisit         (visit lifecycle; assignedTo is the actor)
+ *   - CommunicationLog  (agent-recorded call/email/SMS/WhatsApp/meeting; createdBy actor)
+ *
+ * Each source is capped, then results are merged, sorted by timestamp desc, and
+ * paginated in memory. Purely additive; the underlying write-stores are untouched.
+ */
+
+type TimelineSource = 'CLIENT_TIMELINE' | 'LEAD_ACTIVITY' | 'CLIENT_ACTIVITY' | 'SITE_VISIT' | 'COMMUNICATION';
+
+interface UnifiedTimelineItem {
+  id: string;
+  source: TimelineSource;
+  type: string;
+  description: string;
+  actor: { id: string; fullName: string } | null;
+  at: Date;
+  meta?: Record<string, unknown>;
+}
+
+const CLIENT_ACTIVITY_LABEL: Record<string, string> = {
+  PORTAL_OPENED: 'Opened the portal',
+  PROPERTY_VIEWED: 'Viewed a property',
+  PROPERTY_FAVORITED: 'Favorited a property',
+  PROPERTY_UNFAVORITED: 'Removed a favorite',
+  FEEDBACK_GIVEN: 'Gave feedback on a property',
+  COMMENT_ADDED: 'Commented on a property',
+  SITE_VISIT_REQUESTED: 'Requested a site visit',
+  SITE_VISIT_CONFIRMED: 'Confirmed a site visit',
+  CONTACT_AGENT: 'Contacted the agent',
+  CALL_AGENT: 'Called the agent',
+  WHATSAPP_AGENT: 'Messaged the agent on WhatsApp',
+};
+
+export async function getClientTimeline(clientId: string, query: TimelineQuery) {
+  await assertClientExists(clientId);
+  const { page, limit, source } = query;
+  const want = (s: TimelineSource) => !source || source === s;
+  const CAP = 500;
+
+  const [timelines, leadActivities, clientActivities, siteVisits, communications] = await Promise.all([
+    want('CLIENT_TIMELINE')
+      ? prisma.clientTimeline.findMany({
+          where: { clientId },
+          orderBy: { createdAt: 'desc' },
+          take: CAP,
+          include: { createdBy: { select: { id: true, fullName: true } } },
+        })
+      : Promise.resolve([]),
+    want('LEAD_ACTIVITY')
+      ? prisma.leadActivity.findMany({
+          where: { lead: { clientId } },
+          orderBy: { createdAt: 'desc' },
+          take: CAP,
+          include: { createdBy: { select: { id: true, fullName: true } } },
+        })
+      : Promise.resolve([]),
+    want('CLIENT_ACTIVITY')
+      ? prisma.clientActivity.findMany({
+          where: { clientId },
+          orderBy: { createdAt: 'desc' },
+          take: CAP,
+          include: { property: { select: { id: true, title: true } } },
+        })
+      : Promise.resolve([]),
+    want('SITE_VISIT')
+      ? prisma.siteVisit.findMany({
+          where: { clientId },
+          orderBy: { createdAt: 'desc' },
+          take: CAP,
+          include: {
+            property: { select: { id: true, title: true } },
+            assignedTo: { select: { id: true, fullName: true } },
+          },
+        })
+      : Promise.resolve([]),
+    want('COMMUNICATION')
+      ? prisma.communicationLog.findMany({
+          where: { clientId },
+          orderBy: { occurredAt: 'desc' },
+          take: CAP,
+          include: { createdBy: { select: { id: true, fullName: true } } },
+        })
+      : Promise.resolve([]),
+  ]);
+
+  const items: UnifiedTimelineItem[] = [];
+
+  for (const t of timelines) {
+    items.push({
+      id: t.id,
+      source: 'CLIENT_TIMELINE',
+      type: t.eventType,
+      description: t.description,
+      actor: t.createdBy,
+      at: t.createdAt,
+    });
+  }
+
+  for (const a of leadActivities) {
+    items.push({
+      id: a.id,
+      source: 'LEAD_ACTIVITY',
+      type: a.activityType,
+      description: a.description,
+      actor: a.createdBy,
+      at: a.createdAt,
+      meta: { leadId: a.leadId },
+    });
+  }
+
+  for (const c of clientActivities) {
+    const base = CLIENT_ACTIVITY_LABEL[c.type] ?? c.type;
+    const description = c.property?.title ? `${base}: "${c.property.title}"` : base;
+    items.push({
+      id: c.id,
+      source: 'CLIENT_ACTIVITY',
+      type: c.type,
+      description,
+      actor: null,
+      at: c.createdAt,
+      meta: {
+        ...(c.propertyId ? { propertyId: c.propertyId } : {}),
+        ...(c.collectionId ? { collectionId: c.collectionId } : {}),
+      },
+    });
+  }
+
+  for (const v of siteVisits) {
+    const status = v.status.toLowerCase();
+    items.push({
+      id: v.id,
+      source: 'SITE_VISIT',
+      type: `SITE_VISIT_${v.status}`,
+      description: v.property?.title
+        ? `Site visit ${status} for "${v.property.title}"`
+        : `Site visit ${status}`,
+      actor: v.assignedTo,
+      at: v.createdAt,
+      meta: { status: v.status, scheduledAt: v.scheduledAt, propertyId: v.propertyId },
+    });
+  }
+
+  for (const c of communications) {
+    const verb = c.direction === 'OUTBOUND' ? 'Sent' : 'Received';
+    items.push({
+      id: c.id,
+      source: 'COMMUNICATION',
+      type: `${c.type}_${c.direction}`,
+      description: `${verb} ${c.type.toLowerCase()}: ${c.body}`,
+      actor: c.createdBy,
+      at: c.occurredAt,
+      meta: {
+        commType: c.type,
+        direction: c.direction,
+        ...(c.leadId ? { leadId: c.leadId } : {}),
+      },
+    });
+  }
+
+  items.sort((x, y) => y.at.getTime() - x.at.getTime());
+
+  const total = items.length;
+  const start = (page - 1) * limit;
+  const paged = items.slice(start, start + limit);
+
+  return {
+    items: paged,
+    pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
   };
 }

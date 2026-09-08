@@ -409,8 +409,9 @@ export async function requestSiteVisit(token: string, input: VisitRequestInput) 
   await createNotification(
     agentId,
     'Site visit requested',
-    `${clientFullName} requested a site visit for "${property?.title ?? 'a property'}".`
-  );
+          `${clientFullName} requested a site visit for "${property?.title ?? 'a property'}".`,
+      { link: `/dashboard/clients/${clientId}`, type: 'SITE_VISIT_REQUEST' }
+    );
 
   return visit;
 }

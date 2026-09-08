@@ -1,4 +1,14 @@
-export type LeadStage = 'NEW' | 'CONTACTED' | 'QUALIFIED' | 'NEGOTIATION' | 'WON' | 'LOST';
+export type LeadStage =
+  | 'NEW'
+  | 'CONTACTED'
+  | 'QUALIFIED'
+  | 'PROPERTIES_SHARED'
+  | 'INTERESTED'
+  | 'SITE_VISIT'
+  | 'NEGOTIATION'
+  | 'BOOKING'
+  | 'CLOSED'
+  | 'LOST';
 export type ActivityType = 'CALL' | 'EMAIL' | 'MEETING' | 'NOTE' | 'OTHER';
 
 export interface LeadSource {

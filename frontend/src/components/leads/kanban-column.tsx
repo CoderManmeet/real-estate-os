@@ -1,16 +1,8 @@
 'use client';
 
 import { Lead, LeadStage } from '@/types/lead';
+import { STAGE_LABELS } from '@/lib/leads';
 import { LeadCard } from './lead-card';
-
-const stageLabels: Record<LeadStage, string> = {
-  NEW: 'New',
-  CONTACTED: 'Contacted',
-  QUALIFIED: 'Qualified',
-  NEGOTIATION: 'Negotiation',
-  WON: 'Won',
-  LOST: 'Lost',
-};
 
 export function KanbanColumn({
   stage,
@@ -31,7 +23,7 @@ export function KanbanColumn({
     >
       <div className="mb-3 flex items-center justify-between px-1">
         <h3 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300">
-          {stageLabels[stage]}
+          {STAGE_LABELS[stage]}
         </h3>
         <span className="text-xs text-neutral-400">{leads.length}</span>
       </div>

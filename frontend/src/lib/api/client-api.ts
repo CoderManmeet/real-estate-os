@@ -7,6 +7,9 @@ import {
   RequirementFormValues,
 } from '@/types/client';
 import { ClientEngagement } from '@/types/engagement';
+import { TimelineResponse } from '@/types/timeline';
+
+
 
 export async function listClientsRequest(filters: ClientFilters): Promise<ClientListResponse> {
   const { data } = await api.get('/clients', { params: filters });
@@ -67,5 +70,13 @@ export async function revokePortalTokenRequest(clientId: string): Promise<void> 
 
 export async function getClientEngagementRequest(clientId: string): Promise<ClientEngagement> {
   const { data } = await api.get(`/clients/${clientId}/engagement`);
+  return data.data;
+}
+
+export async function getClientTimelineRequest(
+  clientId: string,
+  params?: { page?: number; limit?: number; source?: string }
+): Promise<TimelineResponse> {
+  const { data } = await api.get(`/clients/${clientId}/timeline`, { params });
   return data.data;
 }

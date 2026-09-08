@@ -7,8 +7,10 @@ exports.markAsRead = markAsRead;
 exports.markAllAsRead = markAllAsRead;
 const prisma_1 = require("../config/prisma");
 const AppError_1 = require("../utils/AppError");
-async function createNotification(userId, title, message) {
-    return prisma_1.prisma.notification.create({ data: { userId, title, message } });
+async function createNotification(userId, title, message, options) {
+    return prisma_1.prisma.notification.create({
+        data: { userId, title, message, link: options?.link, type: options?.type },
+    });
 }
 async function listNotifications(userId) {
     return prisma_1.prisma.notification.findMany({

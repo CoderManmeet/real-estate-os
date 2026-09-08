@@ -1,8 +1,9 @@
 'use client';
 
-import { Menu, Search } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import { ThemeToggle } from './theme-toggle';
 import { NotificationBell } from './notification-bell';
+import { GlobalSearch } from './global-search';
 
 export function Navbar({ onMenuClick }: { onMenuClick?: () => void }) {
   return (
@@ -16,13 +17,7 @@ export function Navbar({ onMenuClick }: { onMenuClick?: () => void }) {
           <Menu size={18} />
         </button>
 
-        <div className="hidden items-center gap-2 rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-1.5 text-sm text-neutral-400 dark:border-neutral-800 dark:bg-neutral-950/50 sm:flex">
-          <Search size={15} />
-          <span className="pr-8">Search everything…</span>
-          <kbd className="rounded border border-neutral-200 bg-white px-1.5 py-0.5 text-[10px] font-medium text-neutral-400 dark:border-neutral-700 dark:bg-neutral-800">
-            ⌘K
-          </kbd>
-        </div>
+        <GlobalSearch />
       </div>
 
       <div className="flex items-center gap-2">

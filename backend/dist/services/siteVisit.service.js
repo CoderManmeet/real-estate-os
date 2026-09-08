@@ -45,7 +45,7 @@ async function createSiteVisit(input, userId) {
         include: siteVisitInclude,
     });
     if (siteVisit.assignedToId !== userId) {
-        await (0, notification_service_1.createNotification)(siteVisit.assignedToId, 'New site visit assigned', `You have a site visit for "${property?.title}" scheduled on ${new Date(siteVisit.scheduledAt).toLocaleString('en-IN')}.`);
+        await (0, notification_service_1.createNotification)(siteVisit.assignedToId, 'New site visit assigned', `You have a site visit for "${property?.title}" scheduled on ${new Date(siteVisit.scheduledAt).toLocaleString('en-IN')}.`, { link: `/dashboard/site-visits/${siteVisit.id}`, type: 'SITE_VISIT' });
     }
     return siteVisit;
 }
@@ -102,7 +102,7 @@ async function updateSiteVisit(id, input, userId) {
     if (input.status && input.status !== existing.status) {
         const notifyUserId = existing.assignedToId !== userId ? existing.assignedToId : existing.createdById;
         if (notifyUserId !== userId) {
-            await (0, notification_service_1.createNotification)(notifyUserId, 'Site visit status updated', `Status changed from ${existing.status} to ${input.status} for "${updated.property.title}".`);
+            await (0, notification_service_1.createNotification)(notifyUserId, 'Site visit status updated', `Status changed from ${existing.status} to ${input.status} for "${updated.property.title}".`, { link: `/dashboard/site-visits/${updated.id}`, type: 'SITE_VISIT' });
         }
     }
     return updated;

@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.regeneratePortalSchema = exports.propertyRefSchema = exports.createTimelineEventSchema = exports.createNoteSchema = exports.createRequirementSchema = exports.listClientsQuerySchema = exports.updateClientSchema = exports.createClientSchema = void 0;
+exports.timelineQuerySchema = exports.regeneratePortalSchema = exports.propertyRefSchema = exports.createTimelineEventSchema = exports.createNoteSchema = exports.createRequirementSchema = exports.listClientsQuerySchema = exports.updateClientSchema = exports.createClientSchema = void 0;
 const zod_1 = require("zod");
 exports.createClientSchema = zod_1.z.object({
     fullName: zod_1.z.string().min(2, 'Full name is required'),
@@ -51,4 +51,11 @@ exports.propertyRefSchema = zod_1.z.object({
 });
 exports.regeneratePortalSchema = zod_1.z.object({
     expiresAt: zod_1.z.string().datetime().optional(),
+});
+exports.timelineQuerySchema = zod_1.z.object({
+    page: zod_1.z.coerce.number().int().positive().default(1),
+    limit: zod_1.z.coerce.number().int().positive().max(100).default(20),
+    source: zod_1.z
+        .enum(['CLIENT_TIMELINE', 'LEAD_ACTIVITY', 'CLIENT_ACTIVITY', 'SITE_VISIT', 'COMMUNICATION'])
+        .optional(),
 });

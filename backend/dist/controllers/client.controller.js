@@ -48,6 +48,7 @@ exports.getPortalLink = getPortalLink;
 exports.regeneratePortalToken = regeneratePortalToken;
 exports.revokePortalToken = revokePortalToken;
 exports.getEngagement = getEngagement;
+exports.getTimeline = getTimeline;
 const AppError_1 = require("../utils/AppError");
 const getParam_1 = require("../utils/getParam");
 const client_validator_1 = require("../validators/client.validator");
@@ -201,6 +202,16 @@ async function revokePortalToken(req, res, next) {
 async function getEngagement(req, res, next) {
     try {
         const data = await clientService.getClientEngagement((0, getParam_1.getParam)(req, 'id'));
+        res.status(200).json({ success: true, data });
+    }
+    catch (err) {
+        next(err);
+    }
+}
+async function getTimeline(req, res, next) {
+    try {
+        const query = client_validator_1.timelineQuerySchema.parse(req.query);
+        const data = await clientService.getClientTimeline((0, getParam_1.getParam)(req, 'id'), query);
         res.status(200).json({ success: true, data });
     }
     catch (err) {

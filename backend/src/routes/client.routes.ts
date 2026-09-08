@@ -23,5 +23,6 @@ router.get('/:id/portal-link', clientController.getPortalLink);
 router.post('/:id/portal-token/regenerate', clientController.regeneratePortalToken);
 router.post('/:id/portal-token/revoke', clientController.revokePortalToken);
 router.get('/:id/engagement', clientController.getEngagement);
+router.get('/:id/timeline', clientController.getTimeline);
 
 export default router;

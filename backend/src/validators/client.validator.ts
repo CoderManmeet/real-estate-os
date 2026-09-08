@@ -58,6 +58,14 @@ export const regeneratePortalSchema = z.object({
   expiresAt: z.string().datetime().optional(),
 });
 
+export const timelineQuerySchema = z.object({
+  page: z.coerce.number().int().positive().default(1),
+  limit: z.coerce.number().int().positive().max(100).default(20),
+  source: z
+        .enum(['CLIENT_TIMELINE', 'LEAD_ACTIVITY', 'CLIENT_ACTIVITY', 'SITE_VISIT', 'COMMUNICATION'])
+    .optional(),
+});
+
 export type CreateClientInput = z.infer<typeof createClientSchema>;
 export type UpdateClientInput = z.infer<typeof updateClientSchema>;
 export type ListClientsQuery = z.infer<typeof listClientsQuerySchema>;
@@ -65,3 +73,4 @@ export type CreateRequirementInput = z.infer<typeof createRequirementSchema>;
 export type CreateNoteInput = z.infer<typeof createNoteSchema>;
 export type CreateTimelineEventInput = z.infer<typeof createTimelineEventSchema>;
 export type RegeneratePortalInput = z.infer<typeof regeneratePortalSchema>;
+export type TimelineQuery = z.infer<typeof timelineQuerySchema>;

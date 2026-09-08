@@ -144,6 +144,19 @@ enum RequirementUrgency {
   HIGH
 }
 
+enum CommunicationType {
+  CALL
+  EMAIL
+  SMS
+  WHATSAPP
+  MEETING
+}
+
+enum CommunicationDirection {
+  INBOUND
+  OUTBOUND
+}
+
 
 
 
@@ -172,9 +185,12 @@ model User {
   createdSiteVisits  SiteVisit[]      @relation("SiteVisitCreator")
   inventoryChanges InventoryStatusLog[]
   notifications      Notification[]
+  savedViews         SavedView[]
+  communications     CommunicationLog[]
   uploadedDocuments Document[]
   createdInvoices   Invoice[]
   createdCollections PropertyCollection[]
+  
 
   @@map("users")
 }
@@ -290,6 +306,7 @@ model Client {
   invoices          Invoice[]
   collections      PropertyCollection[]
   activities       ClientActivity[]
+  communications   CommunicationLog[]
   propertyFeedback PropertyFeedback[]
   propertyComments PropertyComment[]
 
@@ -401,6 +418,7 @@ model Lead {
   updatedAt     DateTime       @updatedAt
   activities    LeadActivity[]
   tasks         Task[]
+  communications CommunicationLog[]
 
   @@map("leads")
 }
@@ -462,6 +480,8 @@ model Notification {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   title     String
   message   String
+    type      String?
+  link      String?
   isRead    Boolean  @default(false)
   createdAt DateTime @default(now())
 
@@ -615,4 +635,37 @@ model ClientActivity {
 
   @@index([clientId, createdAt])
   @@map("client_activities")
+}
+
+model SavedView {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  entity    String
+  config    Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, entity])
+  @@map("saved_views")
+}
+
+
+model CommunicationLog {
+  id          String                 @id @default(uuid())
+  clientId    String
+  client      Client                 @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  leadId      String?
+  lead        Lead?                  @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  type        CommunicationType
+  direction   CommunicationDirection
+  body        String
+  occurredAt  DateTime               @default(now())
+  createdById String
+  createdBy   User                   @relation(fields: [createdById], references: [id])
+  createdAt   DateTime               @default(now())
+
+  @@index([clientId, occurredAt])
+  @@map("communication_logs")
 }

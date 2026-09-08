@@ -21,6 +21,7 @@ import { TimelineFeed } from '@/components/clients/timeline-feed';
 import { PortalAccessPanel } from '@/components/clients/portal-access-panel';
 import { CollectionManager } from '@/components/clients/collection-manager';
 import { EngagementSummary } from '@/components/clients/engagement-summary';
+import { CommunicationPanel } from '@/components/clients/communication-panel';
 
 const statuses: ClientStatus[] = ['NEW', 'CONTACTED', 'QUALIFIED', 'NEGOTIATION', 'CONVERTED', 'LOST'];
 
@@ -142,6 +143,7 @@ export default function ClientDetailPage() {
           <select
             value={client.status}
             onChange={(e) => handleStatusChange(e.target.value as ClientStatus)}
+            title="Auto-derived from the lead pipeline. Manual changes are overridden when a lead's stage changes; use this mainly for clients without leads."
             className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 outline-none focus:border-neutral-400 dark:border-neutral-800 dark:bg-neutral-950 dark:text-white"
           >
             {statuses.map((s) => (
@@ -190,7 +192,7 @@ export default function ClientDetailPage() {
               </div>
             )}
 
-                        <div className="mt-4 space-y-3">
+            <div className="mt-4 space-y-3">
               {client.requirements && client.requirements.length > 0 ? (
                 client.requirements.map((req) => {
                   const chips: string[] = [];
@@ -284,7 +286,7 @@ export default function ClientDetailPage() {
           </div>
         </div>
 
-        {/* Right column: engagement + notes + timeline */}
+        {/* Right column: engagement + notes + communication + timeline */}
         <div className="space-y-6 lg:col-span-2">
           <EngagementSummary engagement={engagement} isLoading={engagementLoading} />
 
@@ -312,10 +314,12 @@ export default function ClientDetailPage() {
             )}
           </div>
 
+          <CommunicationPanel clientId={client.id} />
+
           <div className="rounded-xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
             <h2 className="mb-4 text-sm font-semibold text-neutral-900 dark:text-white">Activity Timeline</h2>
 
-            <TimelineFeed events={client.timeline || []} />
+            <TimelineFeed clientId={client.id} />
           </div>
         </div>
       </div>

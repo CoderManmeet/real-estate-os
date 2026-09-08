@@ -35,7 +35,8 @@ export async function updatePropertyStatus(
       'Inventory status changed',
       `"${property.title}" changed from ${property.status} to ${input.status}${
         input.source === 'BUILDER' ? ' (reported by builder)' : ''
-      }.`
+      }.`,
+      { link: `/dashboard/properties/${property.id}`, type: 'INVENTORY' }
     );
   }
 

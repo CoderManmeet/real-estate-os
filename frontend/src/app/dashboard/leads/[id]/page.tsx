@@ -6,6 +6,8 @@ import Link from 'next/link';
 import { Phone, Home } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Lead, LeadStage, ActivityType } from '@/types/lead';
+import { LEAD_STAGES, STAGE_LABELS } from '@/lib/leads';
+
 import { UserSummary } from '@/types/user';
 import {
   getLeadRequest,
@@ -18,7 +20,7 @@ import { listUsersRequest } from '@/lib/api/user-api';
 import { ActivityForm } from '@/components/leads/activity-form';
 import { TaskList } from '@/components/leads/task-list';
 
-const stages: LeadStage[] = ['NEW', 'CONTACTED', 'QUALIFIED', 'NEGOTIATION', 'WON', 'LOST'];
+// const stages: LeadStage[] = ['NEW', 'CONTACTED', 'QUALIFIED', 'NEGOTIATION', 'WON', 'LOST'];
 
 function formatPrice(price: number) {
   if (price >= 10000000) return `₹${(price / 10000000).toFixed(2)} Cr`;
@@ -123,8 +125,8 @@ export default function LeadDetailPage() {
           onChange={(e) => handleStageChange(e.target.value as LeadStage)}
           className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 outline-none focus:border-neutral-400 dark:border-neutral-800 dark:bg-neutral-950 dark:text-white"
         >
-          {stages.map((s) => (
-            <option key={s} value={s}>{s}</option>
+                    {LEAD_STAGES.map((s) => (
+            <option key={s} value={s}>{STAGE_LABELS[s]}</option>
           ))}
         </select>
       </div>

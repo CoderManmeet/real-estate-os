@@ -2,15 +2,8 @@
 
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { LeadFunnelItem } from '@/types/analytics';
-
-const COLORS: Record<string, string> = {
-  NEW: '#a3a3a3',
-  CONTACTED: '#3b82f6',
-  QUALIFIED: '#8b5cf6',
-  NEGOTIATION: '#f59e0b',
-  WON: '#10b981',
-  LOST: '#ef4444',
-};
+import { LeadStage } from '@/types/lead';
+import { STAGE_COLORS } from '@/lib/leads';
 
 export function LeadFunnelChart({ data }: { data: LeadFunnelItem[] }) {
   return (
@@ -22,7 +15,7 @@ export function LeadFunnelChart({ data }: { data: LeadFunnelItem[] }) {
         <Tooltip />
         <Bar dataKey="count" radius={[6, 6, 0, 0]}>
           {data.map((entry) => (
-            <Cell key={entry.stage} fill={COLORS[entry.stage] || '#a3a3a3'} />
+            <Cell key={entry.stage} fill={STAGE_COLORS[entry.stage as LeadStage] || '#a3a3a3'} />
           ))}
         </Bar>
       </BarChart>

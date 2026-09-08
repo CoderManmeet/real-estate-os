@@ -345,7 +345,7 @@ async function requestSiteVisit(token, input) {
         collectionId,
         metadata: input.preferredDate ? { preferredDate: input.preferredDate } : undefined,
     });
-    await (0, notification_service_1.createNotification)(agentId, 'Site visit requested', `${clientFullName} requested a site visit for "${property?.title ?? 'a property'}".`);
+    await (0, notification_service_1.createNotification)(agentId, 'Site visit requested', `${clientFullName} requested a site visit for "${property?.title ?? 'a property'}".`, { link: `/dashboard/clients/${clientId}`, type: 'SITE_VISIT_REQUEST' });
     return visit;
 }
 async function confirmSiteVisitAsClient(token, siteVisitId) {

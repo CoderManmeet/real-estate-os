@@ -28,7 +28,7 @@ async function updatePropertyStatus(propertyId, input, userId) {
         }),
     ]);
     if (property.createdById !== userId) {
-        await (0, notification_service_1.createNotification)(property.createdById, 'Inventory status changed', `"${property.title}" changed from ${property.status} to ${input.status}${input.source === 'BUILDER' ? ' (reported by builder)' : ''}.`);
+        await (0, notification_service_1.createNotification)(property.createdById, 'Inventory status changed', `"${property.title}" changed from ${property.status} to ${input.status}${input.source === 'BUILDER' ? ' (reported by builder)' : ''}.`, { link: `/dashboard/properties/${property.id}`, type: 'INVENTORY' });
     }
     return updated;
 }

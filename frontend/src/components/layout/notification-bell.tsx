@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { Bell } from 'lucide-react';
 import { Notification } from '@/types/notification';
 import {
@@ -10,6 +11,7 @@ import {
 } from '@/lib/api/notification-api';
 
 export function NotificationBell() {
+  const router = useRouter();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
@@ -43,6 +45,14 @@ export function NotificationBell() {
 
   async function handleOpen() {
     setIsOpen((v) => !v);
+  }
+
+  async function handleNotificationClick(id: string, isRead: boolean, link?: string | null) {
+    if (!isRead) await handleMarkRead(id);
+    if (link) {
+      setIsOpen(false);
+      router.push(link);
+    }
   }
 
   async function handleMarkRead(id: string) {
@@ -101,7 +111,7 @@ export function NotificationBell() {
               notifications.map((n) => (
                 <button
                   key={n.id}
-                  onClick={() => !n.isRead && handleMarkRead(n.id)}
+                  onClick={() => handleNotificationClick(n.id, n.isRead, n.link)}
                   className={`block w-full border-b border-neutral-50 px-4 py-3 text-left last:border-0 hover:bg-neutral-50 dark:border-neutral-800/50 dark:hover:bg-neutral-800/50 ${
                     !n.isRead ? 'bg-blue-50/50 dark:bg-blue-500/5' : ''
                   }`}

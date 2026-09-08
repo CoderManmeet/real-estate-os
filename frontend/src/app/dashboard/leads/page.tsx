@@ -5,10 +5,9 @@ import Link from 'next/link';
 import { Plus } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { LeadBoard, LeadStage } from '@/types/lead';
+import { LEAD_STAGES } from '@/lib/leads';
 import { getLeadBoardRequest, updateLeadStageRequest } from '@/lib/api/lead-api';
 import { KanbanColumn } from '@/components/leads/kanban-column';
-
-const stages: LeadStage[] = ['NEW', 'CONTACTED', 'QUALIFIED', 'NEGOTIATION', 'WON', 'LOST'];
 
 export default function LeadsPage() {
   const [board, setBoard] = useState<LeadBoard | null>(null);
@@ -34,7 +33,7 @@ export default function LeadsPage() {
     const leadId = draggedLeadId.current;
     if (!leadId || !board) return;
 
-    const currentStage = stages.find((s) => board[s].some((l) => l.id === leadId));
+    const currentStage = LEAD_STAGES.find((s) => board[s].some((l) => l.id === leadId));
     if (currentStage === stage) return;
 
     const lead = board[currentStage!].find((l) => l.id === leadId)!;
@@ -75,7 +74,7 @@ export default function LeadsPage() {
       </div>
 
       <div className="flex flex-1 gap-4 overflow-x-auto pb-4">
-        {stages.map((stage) => (
+        {LEAD_STAGES.map((stage) => (
           <KanbanColumn
             key={stage}
             stage={stage}
