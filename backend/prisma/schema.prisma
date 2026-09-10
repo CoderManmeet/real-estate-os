@@ -157,6 +157,53 @@ enum CommunicationDirection {
   OUTBOUND
 }
 
+enum OfferParty {
+  BUYER
+  SELLER
+}
+
+enum OfferStatus {
+  PROPOSED
+  COUNTERED
+  ACCEPTED
+  REJECTED
+  WITHDRAWN
+  EXPIRED
+}
+
+enum DealStage {
+  BOOKING
+  AGREEMENT
+  LOAN
+  REGISTRATION
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CASH
+  BANK_TRANSFER
+  CHEQUE
+  UPI
+  CARD
+  LOAN_DISBURSEMENT
+  OTHER
+}
+
+enum CommissionStatus {
+  PENDING
+  RECEIVED
+  PAID_OUT
+  CANCELLED
+}
+
 
 
 
@@ -190,6 +237,14 @@ model User {
   uploadedDocuments Document[]
   createdInvoices   Invoice[]
   createdCollections PropertyCollection[]
+    createdOwners      Owner[]
+  createdOffers      Offer[]
+  agentDeals         Deal[]         @relation("DealAgent")
+  createdDeals       Deal[]         @relation("DealCreator")
+  createdPayments    Payment[]
+  agentCommissions   Commission[]   @relation("CommissionAgent")
+  createdCommissions Commission[]   @relation("CommissionCreator")
+  uploadedDealDocuments DealDocument[]
   
 
   @@map("users")
@@ -244,6 +299,10 @@ model Property {
   feedback   PropertyFeedback[]
   comments   PropertyComment[]
   activities ClientActivity[]
+    ownerId    String?
+  owner      Owner?    @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  offers     Offer[]
+  deals      Deal[]
 
   @@map("properties")
 }
@@ -309,6 +368,8 @@ model Client {
   communications   CommunicationLog[]
   propertyFeedback PropertyFeedback[]
   propertyComments PropertyComment[]
+    offers           Offer[]
+  deals            Deal[]
 
   @@map("clients")
 }
@@ -419,6 +480,8 @@ model Lead {
   activities    LeadActivity[]
   tasks         Task[]
   communications CommunicationLog[]
+    offers        Offer[]
+  deal          Deal?
 
   @@map("leads")
 }
@@ -668,4 +731,142 @@ model CommunicationLog {
 
   @@index([clientId, occurredAt])
   @@map("communication_logs")
+}
+
+
+
+model Owner {
+  id          String     @id @default(uuid())
+  fullName    String
+  phone       String
+  email       String?
+  address     String?
+  notes       String?
+  createdById String
+  createdBy   User       @relation(fields: [createdById], references: [id])
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  properties  Property[]
+  deals       Deal[]
+
+  @@map("owners")
+}
+
+model Offer {
+  id          String      @id @default(uuid())
+  leadId      String
+  lead        Lead        @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  clientId    String
+  client      Client      @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  propertyId  String
+  property    Property    @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  dealId      String?
+  deal        Deal?       @relation(fields: [dealId], references: [id], onDelete: SetNull)
+  party       OfferParty
+  amount      Float
+  status      OfferStatus @default(PROPOSED)
+  note        String?
+  validUntil  DateTime?
+  createdById String
+  createdBy   User        @relation(fields: [createdById], references: [id])
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([leadId, createdAt])
+  @@map("offers")
+}
+
+model Deal {
+  id               String    @id @default(uuid())
+  leadId           String    @unique
+  lead             Lead      @relation(fields: [leadId], references: [id], onDelete: Restrict)
+  clientId         String
+  client           Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  propertyId       String
+  property         Property  @relation(fields: [propertyId], references: [id], onDelete: Restrict)
+  ownerId          String?
+  owner            Owner?    @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  agentId          String
+  agent            User      @relation("DealAgent", fields: [agentId], references: [id])
+  stage            DealStage @default(BOOKING)
+  dealValue        Float
+  bookingDate      DateTime  @default(now())
+  agreementDate    DateTime?
+  loanApprovalDate DateTime?
+  registrationDate DateTime?
+  completedDate    DateTime?
+  cancelledAt      DateTime?
+  cancelReason     String?
+  notes            String?
+  createdById      String
+  createdBy        User      @relation("DealCreator", fields: [createdById], references: [id])
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  offers     Offer[]
+  payments   Payment[]
+  commission Commission?
+  documents  DealDocument[]
+
+  @@map("deals")
+}
+
+model Payment {
+  id          String         @id @default(uuid())
+  dealId      String
+  deal        Deal           @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  label       String?
+  amount      Float
+  dueDate     DateTime?
+  paidAt      DateTime?
+  status      PaymentStatus  @default(PENDING)
+  method      PaymentMethod?
+  reference   String?
+  note        String?
+  createdById String
+  createdBy   User           @relation(fields: [createdById], references: [id])
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@index([dealId, dueDate])
+  @@map("payments")
+}
+
+model Commission {
+  id            String           @id @default(uuid())
+  dealId        String           @unique
+  deal          Deal             @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  grossAmount   Float
+  agentPercent  Float
+  agentAmount   Float
+  companyAmount Float
+  status        CommissionStatus @default(PENDING)
+  receivedAt    DateTime?
+  paidOutAt     DateTime?
+  agentId       String
+  agent         User             @relation("CommissionAgent", fields: [agentId], references: [id])
+  note          String?
+  createdById   String
+  createdBy     User             @relation("CommissionCreator", fields: [createdById], references: [id])
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  @@map("deal_commissions")
+}
+
+model DealDocument {
+  id           String       @id @default(uuid())
+  dealId       String
+  deal         Deal         @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  title        String
+  docType      DocumentType
+  fileUrl      String
+  publicId     String
+  fileType     String
+  fileSize     Int
+  uploadedById String
+  uploadedBy   User         @relation(fields: [uploadedById], references: [id])
+  createdAt    DateTime     @default(now())
+
+  @@map("deal_documents")
 }

@@ -202,8 +202,30 @@ export async function updateLead(id: string, input: UpdateLeadInput, userId: str
   return updated;
 }
 
+/**
+ * V2.2 guard: a Deal links to its Lead with onDelete: Restrict. Deleting a lead
+ * that has a deal would raise a raw FK error (surfacing as a 500), so we check
+ * first and throw a clear 409 instead. Shared by single- and bulk-delete paths.
+ */
+export async function assertLeadsHaveNoDeals(leadIds: string[]) {
+  const blocking = await prisma.deal.findMany({
+    where: { leadId: { in: leadIds } },
+    select: { leadId: true },
+  });
+  if (blocking.length > 0) {
+    throw new AppError(
+      blocking.length === 1
+        ? 'This lead has a linked deal. Cancel or delete the deal before deleting the lead.'
+        : `${blocking.length} of the selected leads have linked deals. Cancel or delete those deals first.`,
+      409
+    );
+  }
+}
+
 export async function deleteLead(id: string, userId: string) {
   const existing = await assertLeadExists(id);
+  // Block (409) when a deal is linked instead of letting the DB Restrict throw.
+  await assertLeadsHaveNoDeals([id]);
   await prisma.lead.delete({ where: { id } });
   // Removing a lead can change the furthest-progress lead, so re-derive status.
   await syncClientStatusFromLeads(existing.clientId, userId);

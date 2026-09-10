@@ -20,6 +20,13 @@ import searchRoutes from './search.routes';
 import bulkRoutes from './bulk.routes';
 import savedViewRoutes from './savedview.routes';
 import communicationRoutes from './communication.routes';
+import ownerRoutes from './owner.routes';
+import offerRoutes from './offer.routes';
+import dealRoutes from './deal.routes';
+import paymentRoutes from './payment.routes';
+import commissionRoutes from './commission.routes';
+import dealDocumentRoutes from './dealDocument.routes';
+import revenueRoutes from './revenue.routes';
 
 
 
@@ -45,6 +52,13 @@ router.use('/search', searchRoutes);
 router.use('/bulk', bulkRoutes);
 router.use('/saved-views', savedViewRoutes);
 router.use('/communications', communicationRoutes);
+router.use('/owners', ownerRoutes);
+router.use('/offers', offerRoutes);
+router.use('/deals', dealRoutes);
+router.use('/payments', paymentRoutes);
+router.use('/commissions', commissionRoutes);
+router.use('/deal-documents', dealDocumentRoutes);
+router.use('/revenue', revenueRoutes);
 router.use('/ai', aiRoutes);
 router.use('/collections', collectionRoutes);
 

@@ -48,3 +48,16 @@ export async function toggleTaskRequest(leadId: string, taskId: string, isComple
   const { data } = await api.patch(`/leads/${leadId}/tasks/${taskId}`, { isCompleted });
   return data.data;
 }
+
+export async function listLeadsRequest(params?: {
+  page?: number;
+  limit?: number;
+  stage?: string;
+  assignedToId?: string;
+}): Promise<{
+  leads: Lead[];
+  pagination: { page: number; limit: number; total: number; totalPages: number };
+}> {
+  const { data } = await api.get('/leads', { params });
+  return data.data;
+}

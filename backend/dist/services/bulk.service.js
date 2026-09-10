@@ -17,6 +17,9 @@ async function bulkLeads(input, userId) {
     const leadIds = leads.map((l) => l.id);
     const clientIds = [...new Set(leads.map((l) => l.clientId))];
     if (input.action === 'delete') {
+        // V2.2: refuse (409) if any selected lead has a linked deal, rather than
+        // letting the Restrict on Deal.leadId raise a raw FK error.
+        await (0, lead_service_1.assertLeadsHaveNoDeals)(leadIds);
         await prisma_1.prisma.lead.deleteMany({ where: { id: { in: leadIds } } });
         for (const clientId of clientIds)
             await (0, lead_service_1.syncClientStatusFromLeads)(clientId, userId);

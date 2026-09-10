@@ -1,6 +1,6 @@
 import { prisma } from '../config/prisma';
 import { AppError } from '../utils/AppError';
-import { syncClientStatusFromLeads } from './lead.service';
+import { syncClientStatusFromLeads, assertLeadsHaveNoDeals } from './lead.service';
 import { BulkLeadsInput, BulkClientsInput } from '../validators/bulk.validator';
 
 // Bulk operations (V2.1). Deterministic batch mutations with validation. Stage/status
@@ -16,6 +16,9 @@ export async function bulkLeads(input: BulkLeadsInput, userId: string) {
   const clientIds = [...new Set(leads.map((l) => l.clientId))];
 
   if (input.action === 'delete') {
+    // V2.2: refuse (409) if any selected lead has a linked deal, rather than
+    // letting the Restrict on Deal.leadId raise a raw FK error.
+    await assertLeadsHaveNoDeals(leadIds);
     await prisma.lead.deleteMany({ where: { id: { in: leadIds } } });
     for (const clientId of clientIds) await syncClientStatusFromLeads(clientId, userId);
     return { deleted: leads.length };
